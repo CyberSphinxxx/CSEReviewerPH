@@ -35,7 +35,7 @@ export interface ExamRuleConfig {
   timeLimitMinutes: number;
   passingScorePercentage: number;
   subjectDistribution?: Record<string, number>; // subjectId/slug -> count or ratio
-  difficultyDistribution?: Record<QuestionDifficulty, number>; // difficulty -> count or percentage
+  difficultyDistribution?: Partial<Record<QuestionDifficulty, number>>; // difficulty -> count or percentage
   allowsFlagging: boolean;
   hasContinuousTimer: boolean;
 }

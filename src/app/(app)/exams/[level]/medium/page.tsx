@@ -1,0 +1,30 @@
+import { notFound } from "next/navigation";
+import { SEED_LEVELS } from "@/db/seed-data";
+import { prepareExamSession } from "@/features/practice/practice-service";
+import { ExamRunner } from "@/features/practice/ExamRunner";
+
+export default async function MediumTestPage({
+  params,
+}: {
+  params: Promise<{ level: string }>;
+}) {
+  const { level } = await params;
+  const examLevel = SEED_LEVELS.find((l) => l.slug === level);
+
+  if (!examLevel) {
+    notFound();
+  }
+
+  const { questions, rules } = prepareExamSession(level, "medium", {
+    questionLimit: 30,
+  });
+
+  return (
+    <ExamRunner
+      initialQuestions={questions}
+      rules={rules}
+      title={`${examLevel.name} — Medium Test`}
+      subtitle="30 questions &bull; 30 minutes &bull; Balanced subtests & detailed analytics"
+    />
+  );
+}
