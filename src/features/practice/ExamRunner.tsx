@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   type EngineQuestion,
@@ -50,17 +50,44 @@ export function ExamRunner({
     createExamSession(initialQuestions, rules.timeLimitMinutes, rules.allowsFlagging)
   );
 
+  // Allow testExpirySeconds query param for automated e2e testing of timeout auto-submit
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const testExpiry = params.get("testExpirySeconds");
+      if (testExpiry) {
+        const secs = parseInt(testExpiry, 10);
+        if (!isNaN(secs) && secs > 0) {
+          setSession((prev) => ({
+            ...prev,
+            timer: {
+              totalSeconds: secs,
+              remainingSeconds: secs,
+              isExpired: false,
+              isWarning: false,
+            },
+          }));
+        }
+      }
+    }
+  }, []);
+
   const [showNavigator, setShowNavigator] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSubmittingRef = useRef(false);
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
 
   // Submit handler
   const handleSubmit = useCallback(() => {
-    if (isSubmitting) return;
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     setIsSubmitting(true);
 
-    const answersList = Array.from(session.answers.values());
-    const timeSpent = session.timer.totalSeconds - session.timer.remainingSeconds;
+    const currentSession = sessionRef.current;
+    const answersList = Array.from(currentSession.answers.values());
+    const timeSpent = Math.max(1, currentSession.timer.totalSeconds - currentSession.timer.remainingSeconds);
     const scoreResult = calculateScore(
       initialQuestions,
       answersList,
@@ -98,7 +125,7 @@ export function ExamRunner({
 
       // Update mistake bank
       const incorrectQuestions = initialQuestions.filter((q) => {
-        const userAns = session.answers.get(q.id);
+        const userAns = currentSession.answers.get(q.id);
         const correctChoice = q.choices.find((c) => c.isCorrect);
         return !userAns?.selectedChoiceId || userAns.selectedChoiceId !== correctChoice?.id;
       });
@@ -117,29 +144,28 @@ export function ExamRunner({
 
     // Redirect to results page
     router.push(`/results/${attemptId}`);
-  }, [isSubmitting, session, initialQuestions, rules, title, router]);
+  }, [initialQuestions, rules, title, router]);
 
   // Continuous Single Timer Tick
   useEffect(() => {
-    if (session.isSubmitted || session.timer.isExpired) {
-      if (session.timer.isExpired && !session.isSubmitted) {
-        handleSubmit();
-      }
-      return;
-    }
+    if (session.timer.isExpired) return;
 
     const interval = setInterval(() => {
       setSession((prev) => {
-        const updated = stepTimer(prev, 1);
-        if (updated.timer.isExpired && !updated.isSubmitted) {
-          handleSubmit();
-        }
-        return updated;
+        if (prev.timer.isExpired) return prev;
+        return stepTimer(prev, 1);
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [session.isSubmitted, session.timer.isExpired, handleSubmit]);
+  }, [session.timer.isExpired]);
+
+  // Auto-submit on timer expiry
+  useEffect(() => {
+    if (session.timer.isExpired && !isSubmittingRef.current) {
+      handleSubmit();
+    }
+  }, [session.timer.isExpired, handleSubmit]);
 
   const currentQuestion = initialQuestions[session.currentIndex] || initialQuestions[0];
   const currentAnswer = session.answers.get(currentQuestion?.id);

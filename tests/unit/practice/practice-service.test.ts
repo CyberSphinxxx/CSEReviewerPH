@@ -22,6 +22,7 @@ describe("Practice Service — CSE Implementation", () => {
     expect(subjectSlugs).toContain("numerical-ability");
     expect(subjectSlugs).toContain("analytical-ability");
     expect(subjectSlugs).toContain("general-information");
+    expect(subjectSlugs).not.toContain("clerical-ability");
   });
 
   it("loads CSE Subprofessional level and its clerical subtest", () => {
@@ -31,6 +32,21 @@ describe("Practice Service — CSE Implementation", () => {
 
     const subjectSlugs = subpro?.subjects.map((s) => s.slug);
     expect(subjectSlugs).toContain("clerical-ability");
+    expect(subjectSlugs).not.toContain("analytical-ability");
+  });
+
+  it("strictly seeds Analytical Ability only under Professional and Clerical Ability only under Subprofessional", () => {
+    const pro = getExamLevelInfo("professional")!;
+    const subpro = getExamLevelInfo("subprofessional")!;
+
+    const proSubjects = pro.subjects.map((s) => s.slug);
+    const subproSubjects = subpro.subjects.map((s) => s.slug);
+
+    expect(proSubjects).toContain("analytical-ability");
+    expect(subproSubjects).not.toContain("analytical-ability");
+
+    expect(subproSubjects).toContain("clerical-ability");
+    expect(proSubjects).not.toContain("clerical-ability");
   });
 
   it("prepares Quick Test session with 10 questions and 10 minutes", () => {

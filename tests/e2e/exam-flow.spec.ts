@@ -47,6 +47,8 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
 
     // Verify navigation to results
     await page.waitForURL(/\/results\/.+/);
+    await expect(page.getByText("Estimated Score", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Score Interpretation & Official CSC Rating Notice/i)).toBeVisible();
     await expect(page.getByText(/Subtest Performance Breakdown/i)).toBeVisible();
     await expect(page.getByText(/Detailed Answer Review/i)).toBeVisible();
     await expect(page.getByText(/Educational Concept & Rationale/i).first()).toBeVisible();
@@ -62,5 +64,24 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
     // Verify palette displays items
     await page.getByRole("button", { name: /palette/i }).click();
     await expect(page.getByText(/Question Navigator/i)).toBeVisible();
+  });
+
+  test("automatically submits exam when timer expires on timeout without clicking submit", async ({ page }) => {
+    // Navigate with a 2-second test expiry timer
+    await page.goto("/exams/professional/quick?testExpirySeconds=2");
+
+    await expect(page.locator("#exam-timer")).toBeVisible();
+    await expect(page.getByText(/Question 1 of 10/i)).toBeVisible();
+
+    // Select an answer
+    const firstChoice = page.locator("button:has(span.rounded-lg:text('A'))").first();
+    await firstChoice.click();
+
+    // Do NOT click submit; wait for timer to expire (2 seconds) and automatically submit
+    await page.waitForURL(/\/results\/.+/, { timeout: 15000 });
+    await expect(page.getByText("Estimated Score", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Score Interpretation & Official CSC Rating Notice/i)).toBeVisible();
+    await expect(page.getByText(/Subtest Performance Breakdown/i)).toBeVisible();
+    await expect(page.getByText(/Detailed Answer Review/i)).toBeVisible();
   });
 });

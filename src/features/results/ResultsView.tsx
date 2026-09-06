@@ -18,6 +18,7 @@ import {
   ArrowRight,
   Sparkles,
   TrendingUp,
+  Info,
 } from "lucide-react";
 
 export interface AttemptData {
@@ -129,19 +130,22 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
               </div>
 
               <h1 className="text-3xl sm:text-4xl font-black tracking-tight">
-                {scoreResult.isPassed ? "Congratulations! You Passed!" : "Good Effort! Keep Reviewing!"}
+                {scoreResult.isPassed ? "Congratulations! Benchmark Achieved!" : "Diagnostic Score Summary"}
               </h1>
 
               <p className="mt-2 text-sm sm:text-base text-slate-300 max-w-xl">
                 {scoreResult.isPassed
-                  ? `Your score of ${scoreResult.percentageScore}% exceeds the Philippine Civil Service 80.00% passing threshold.`
-                  : `You attained ${scoreResult.percentageScore}%. Target standard is 80.00%. Practice your weak areas below to close the gap.`}
+                  ? `Your estimated score of ${scoreResult.percentageScore}% meets or exceeds the estimated 80.00% benchmark based on percentage of items correct.`
+                  : `Your estimated score is ${scoreResult.percentageScore}% based on percentage of items correct. The benchmark target is 80.00%. Practice your weak areas below to close the gap.`}
               </p>
             </div>
 
             {/* Big Circular / Rounded Score Badge */}
             <div className="flex-shrink-0 flex items-center gap-4 bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/10">
               <div className="text-center">
+                <span className="text-[11px] uppercase tracking-wider font-bold text-gold-300 block mb-1">
+                  Estimated Score
+                </span>
                 <span className="block text-4xl sm:text-5xl font-black text-gold-400">
                   {scoreResult.percentageScore}%
                 </span>
@@ -151,6 +155,20 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* CSC Rating Formula Transparency Notice (Product Plan Addendum §50) */}
+        <div className="rounded-2xl border border-amber-200/80 bg-amber-50/60 p-5 text-xs sm:text-sm text-slate-700 shadow-sm space-y-2">
+          <div className="flex items-center gap-2 font-bold text-amber-950">
+            <Info className="w-4 h-4 text-amber-700 flex-shrink-0" />
+            <span>Score Interpretation & Official CSC Rating Notice</span>
+          </div>
+          <p>
+            <strong>Estimate based on percentage correct:</strong> This score represents an estimate calculated from the percentage of items answered correctly ({scoreResult.percentageScore}%) against the standard 80.00% passing threshold.
+          </p>
+          <p className="text-slate-600 text-xs leading-relaxed">
+            <strong>CSC Proprietary Rating Formula:</strong> The Philippine Civil Service Commission (CSC) utilizes a proprietary general rating formula across subtests with calibrated statistical weighting that is not publicly disclosed. Diagnostic scores on this reviewer are designed to evaluate topic mastery and guide preparation, and do not replicate or guarantee an official CSC Certificate of Eligibility rating.
+          </p>
         </div>
 
         {/* Performance Breakdown by Subject */}
