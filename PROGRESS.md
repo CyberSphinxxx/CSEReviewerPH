@@ -12,8 +12,8 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **`npm run check:architecture`**: ✅ **PASSED** (Strictly zero hardcoded exam-slug branching inside `src/features/exam-engine/`).
 - **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with 0 errors).
 - **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
-- **`npm run test`**: ✅ **PASSED** (48 unit & real PostgreSQL integration tests across 11 test suites passing).
-- **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 9 routes compiled and prerendered).
+- **`npm run test`**: ✅ **PASSED** (63 unit & real PostgreSQL integration tests across 14 test suites passing).
+- **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 10 routes compiled and prerendered, including `/api/health`).
 - **`npm run test:e2e`**: ✅ **PASSED** (Playwright end-to-end test suite verified Quick Test flow, flagging, timer countdown, review modal, score calculation, timeout auto-submit, results score framing, and 170-item Full Mock Exam).
 
 ---
@@ -101,6 +101,25 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
   - Saved incorrect questions from test sessions with "Practice My Mistakes" interactive drill mode and explanations.
 - **Saved Bookmarks** (`/dashboard/bookmarks`):
   - Saved question repository with "Practice Bookmarks" drill mode.
+
+### Phase 3.5: Vercel Production Readiness
+- **Next.js 15 Configuration (`next.config.ts`)**:
+  - Registered `serverExternalPackages: ['@electric-sql/pglite', 'pg']` to isolate native/wasm libraries from serverless bundling.
+  - Implemented production HTTP security headers across all routes: HSTS, `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Permissions-Policy`.
+  - Enforced `reactStrictMode: true` and `poweredByHeader: false`.
+- **Serverless PostgreSQL Optimization (`src/db/index.ts` & `drizzle.config.ts`)**:
+  - Global singleton pattern (`globalForDb.__pgPool`) to reuse warm connection pools and prevent connection pool leaks across Vercel Lambdas.
+  - Automatic cloud SSL auto-negotiation (`rejectUnauthorized: false`) for Neon, Supabase, Vercel Postgres, and remote hosted databases.
+  - Native fallback support for `POSTGRES_URL` (Vercel Postgres marketplace integration) alongside `DATABASE_URL`.
+  - Configured conservative serverless pool limits (`max: 5`, `idleTimeoutMillis: 30000`, `connectionTimeoutMillis: 10000`).
+- **Dynamic Vercel Deployment URLs (`src/lib/env.ts`)**:
+  - Dynamic URL resolution honoring `NEXT_PUBLIC_APP_URL`, `VERCEL_PROJECT_PRODUCTION_URL`, ephemeral `VERCEL_URL` preview branches, and local fallback.
+- **Deployment Health Check (`src/app/api/health/route.ts`)**:
+  - Created `/api/health` returning JSON runtime status, ISO timestamp, deployment platform, and database configuration presence with `no-store` caching.
+- **Deployment Assets & Documentation**:
+  - Created `vercel.json` with framework definition and build configuration.
+  - Created `docs/vercel-deployment.md` step-by-step deployment and migration runbook.
+  - Updated `.env.example` with Vercel deployment variables.
 
 ---
 
