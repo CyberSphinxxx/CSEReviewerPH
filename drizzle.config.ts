@@ -8,6 +8,9 @@ export default defineConfig({
   out: "./src/db/migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/csereviewer",
+    url:
+      process.env.DATABASE_URL ||
+      process.env.POSTGRES_URL ||
+      "postgresql://postgres:postgres@localhost:5432/csereviewer",
   },
 });
