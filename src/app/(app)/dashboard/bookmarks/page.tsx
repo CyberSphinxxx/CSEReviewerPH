@@ -2,54 +2,38 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { type EngineQuestion } from "@/features/exam-engine";
-import { SEED_QUESTIONS } from "@/db/seed-data";
 import { ExamRunner } from "@/features/practice/ExamRunner";
+import { LocalStorageService, type StoredBookmarkItem } from "@/lib/storage";
 import { Bookmark, ChevronLeft, Play, BookOpen, Trash2 } from "lucide-react";
 
 export default function BookmarksPage() {
-  const [bookmarkedQuestions, setBookmarkedQuestions] = useState<EngineQuestion[]>([]);
+  const [bookmarks, setBookmarks] = useState<StoredBookmarkItem[]>([]);
   const [isPracticing, setIsPracticing] = useState(false);
 
   useEffect(() => {
-    try {
-      const savedIds = new Set(JSON.parse(localStorage.getItem("bookmarked_question_ids") || "[]"));
-      const matched = SEED_QUESTIONS.filter((q) => savedIds.has(q.id));
-      setBookmarkedQuestions(matched);
-    } catch {
-      // ignore
-    }
+    setBookmarks(LocalStorageService.getBookmarks());
   }, []);
 
   const removeBookmark = (qId: string) => {
-    setBookmarkedQuestions((prev) => {
-      const updated = prev.filter((q) => q.id !== qId);
-      try {
-        localStorage.setItem(
-          "bookmarked_question_ids",
-          JSON.stringify(updated.map((q) => q.id))
-        );
-      } catch {
-        // ignore
-      }
-      return updated;
-    });
+    LocalStorageService.removeBookmark(qId);
+    setBookmarks((prev) => prev.filter((b) => b.id !== qId));
   };
 
-  if (isPracticing && bookmarkedQuestions.length > 0) {
+  if (isPracticing && bookmarks.length > 0) {
+    const practiceQuestions = bookmarks.map((b) => b.question);
     return (
       <ExamRunner
-        initialQuestions={bookmarkedQuestions}
+        initialQuestions={practiceQuestions}
         rules={{
           mode: "bookmarks",
-          itemCount: bookmarkedQuestions.length,
-          timeLimitMinutes: Math.max(10, Math.ceil(bookmarkedQuestions.length * 1.5)),
+          itemCount: practiceQuestions.length,
+          timeLimitMinutes: Math.max(10, Math.ceil(practiceQuestions.length * 1.5)),
           passingScorePercentage: 80,
           allowsFlagging: true,
           hasContinuousTimer: true,
         }}
         title="Bookmarked Questions Practice"
-        subtitle={`Reviewing ${bookmarkedQuestions.length} saved questions`}
+        subtitle={`Reviewing ${practiceQuestions.length} saved questions`}
       />
     );
   }
@@ -80,43 +64,48 @@ export default function BookmarksPage() {
               </div>
             </div>
 
-            {bookmarkedQuestions.length > 0 && (
+            {bookmarks.length > 0 && (
               <button
                 onClick={() => setIsPracticing(true)}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs shadow-md shadow-brand-700/20 transition active:scale-95"
               >
                 <Play className="w-3.5 h-3.5 fill-white" />
-                <span>Practice Bookmarks ({bookmarkedQuestions.length})</span>
+                <span>Practice Bookmarks ({bookmarks.length})</span>
               </button>
             )}
           </div>
 
-          {bookmarkedQuestions.length > 0 ? (
+          {bookmarks.length > 0 ? (
             <div className="space-y-4">
-              {bookmarkedQuestions.map((q, idx) => (
-                <div key={q.id} className="p-4 rounded-xl border border-slate-200 hover:border-slate-300 transition">
-                  <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-1.5">
-                    <span className="text-brand-700">{q.subjectName} &bull; {q.topicName}</span>
-                    <div className="flex items-center gap-3">
-                      <span>Item #{idx + 1}</span>
-                      <button
-                        onClick={() => removeBookmark(q.id)}
-                        className="text-rose-600 hover:text-rose-800 p-1 rounded"
-                        title="Remove bookmark"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+              {bookmarks.map((item, idx) => {
+                const q = item.question;
+                return (
+                  <div key={item.id} className="p-4 rounded-xl border border-slate-200 hover:border-slate-300 transition">
+                    <div className="flex items-center justify-between text-xs font-semibold text-slate-500 mb-1.5">
+                      <span className="text-brand-700">
+                        {q.subjectName} &bull; {q.topicName}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <span>Item #{idx + 1}</span>
+                        <button
+                          onClick={() => removeBookmark(item.id)}
+                          className="text-rose-600 hover:text-rose-800 p-1 rounded"
+                          title="Remove bookmark"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <h4 className="font-semibold text-slate-900 text-sm whitespace-pre-line">
+                      {q.questionText}
+                    </h4>
+                    <div className="mt-3 p-3 rounded-lg bg-slate-50 text-xs text-slate-600 flex items-start gap-2">
+                      <BookOpen className="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5" />
+                      <span>{q.explanation}</span>
                     </div>
                   </div>
-                  <h4 className="font-semibold text-slate-900 text-sm whitespace-pre-line">
-                    {q.questionText}
-                  </h4>
-                  <div className="mt-3 p-3 rounded-lg bg-slate-50 text-xs text-slate-600 flex items-start gap-2">
-                    <BookOpen className="w-4 h-4 text-brand-600 flex-shrink-0 mt-0.5" />
-                    <span>{q.explanation}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12 text-slate-500 space-y-3">
