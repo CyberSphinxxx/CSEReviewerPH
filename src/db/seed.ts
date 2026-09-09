@@ -1,3 +1,6 @@
+import * as dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
+
 import { getDb } from "./index";
 import {
   exams,
@@ -90,11 +93,10 @@ async function runSeed() {
     }
 
     console.log("✅ Seed completed successfully!");
+    process.exit(0);
   } catch (error) {
-    console.warn(
-      "⚠️ Note: Database seed could not connect to live PostgreSQL. (Dev mock data is available in seed-data.ts):",
-      (error as Error).message
-    );
+    console.error("Full seed error:", error);
+    process.exit(1);
   }
 }
 
