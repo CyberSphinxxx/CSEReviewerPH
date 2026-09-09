@@ -20,6 +20,7 @@ export default async function TopicPracticeSessionPage({
   // Prepare a practice session for this topic
   const { questions, rules } = prepareExamSession("professional", "practice", {
     topicId: topic.id,
+    questionLimit: 10,
   });
 
   return (
