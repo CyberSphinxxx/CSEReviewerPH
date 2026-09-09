@@ -6,6 +6,8 @@ import { ResultsView, type AttemptData } from "@/features/results/ResultsView";
 import { SEED_QUESTIONS } from "@/db/seed-data";
 import { calculateScore } from "@/features/exam-engine";
 
+import { LocalStorageService } from "@/lib/storage";
+
 export default function ResultsPage() {
   const params = useParams();
   const attemptId = params?.attemptId as string;
@@ -16,15 +18,11 @@ export default function ResultsPage() {
   useEffect(() => {
     if (!attemptId) return;
 
-    try {
-      const stored = localStorage.getItem(`attempt_${attemptId}`);
-      if (stored) {
-        setAttemptData(JSON.parse(stored));
-        setIsLoading(false);
-        return;
-      }
-    } catch {
-      // storage unavailable
+    const stored = LocalStorageService.getAttemptDetails(attemptId);
+    if (stored) {
+      setAttemptData(stored as unknown as AttemptData);
+      setIsLoading(false);
+      return;
     }
 
     // Fallback: create mock completed attempt data for preview / direct link
