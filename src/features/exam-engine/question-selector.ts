@@ -68,16 +68,17 @@ export function selectQuestionsForExam(
   // Shuffle final selection and assign choices
   const shuffledQuestions = shuffleArray(selectedQuestions).slice(0, rules.itemCount);
 
-  // Return questions with randomized choices, re-labeled A, B, C, D
+  // Return questions with randomized choices (unless choice order is explicitly locked)
   return shuffledQuestions.map((q) => {
-    const shuffledChoices = shuffleArray(q.choices).map((c, idx) => ({
+    const choicesToUse = q.lockChoiceOrder ? [...q.choices] : shuffleArray(q.choices);
+    const finalChoices = choicesToUse.map((c, idx) => ({
       ...c,
       choiceLabel: String.fromCharCode(65 + idx), // A, B, C, D...
       order: idx,
     }));
     return {
       ...q,
-      choices: shuffledChoices,
+      choices: finalChoices,
     };
   });
 }
