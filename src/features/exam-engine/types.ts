@@ -26,6 +26,7 @@ export interface EngineQuestion {
   difficulty: QuestionDifficulty;
   language: QuestionLanguage;
   choices: EngineChoice[];
+  lockChoiceOrder?: boolean;
   isSeedData?: boolean;
 }
 
