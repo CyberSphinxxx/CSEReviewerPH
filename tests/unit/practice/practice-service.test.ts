@@ -73,4 +73,29 @@ describe("Practice Service — CSE Implementation", () => {
     expect(rules.hasContinuousTimer).toBe(true);
     expect(session.timer.remainingSeconds).toBe(190 * 60);
   });
+
+  it("prepares Topic Practice session with only the topic's questions without duplicating to 170", () => {
+    const { session, questions, rules } = prepareExamSession("professional", "practice", {
+      topicId: "top-pro-analogy",
+      questionLimit: 10,
+    });
+
+    expect(session.totalQuestions).toBeLessThanOrEqual(10);
+    expect(questions.length).toBe(session.totalQuestions);
+    expect(session.totalQuestions).not.toBe(170);
+    // All questions belong strictly to the requested topic
+    for (const q of questions) {
+      expect(q.topicId).toBe("top-pro-analogy");
+    }
+    expect(rules.timeLimitMinutes).toBe(15);
+  });
+
+  it("ensures all seed questions do not leak [SEED-PLACEHOLDER] in questionText", async () => {
+    const { SEED_QUESTIONS } = await import("@/db/seed-data");
+    expect(SEED_QUESTIONS.length).toBeGreaterThan(0);
+    for (const q of SEED_QUESTIONS) {
+      expect(q.questionText).not.toContain("[SEED-PLACEHOLDER]");
+      expect(q.questionText).not.toContain("[SEED DATA]");
+    }
+  });
 });
