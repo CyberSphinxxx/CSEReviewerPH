@@ -7,6 +7,7 @@ import {
   type ScoringResult,
   type UserAnswerState,
 } from "@/features/exam-engine";
+import { LocalStorageService } from "@/lib/storage";
 import {
   Award,
   CheckCircle2,
@@ -42,28 +43,20 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
   const [expandedQuestionIds, setExpandedQuestionIds] = useState<Set<string>>(new Set());
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
 
-  // Load bookmarks
+  // Load bookmarks via LocalStorageService
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("bookmarked_question_ids") || "[]");
-      setBookmarkedIds(new Set(saved));
-    } catch {
-      // ignore
-    }
+    const saved = LocalStorageService.getBookmarks();
+    setBookmarkedIds(new Set(saved.map((b) => b.id)));
   }, []);
 
-  const toggleBookmark = (qId: string) => {
+  const toggleBookmark = (q: EngineQuestion) => {
+    const isNowBookmarked = LocalStorageService.toggleBookmark(q);
     setBookmarkedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(qId)) {
-        next.delete(qId);
+      if (isNowBookmarked) {
+        next.add(q.id);
       } else {
-        next.add(qId);
-      }
-      try {
-        localStorage.setItem("bookmarked_question_ids", JSON.stringify(Array.from(next)));
-      } catch {
-        // ignore
+        next.delete(q.id);
       }
       return next;
     });
@@ -387,7 +380,7 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
                     <div className="flex items-center gap-2">
                       {/* Bookmark Button */}
                       <button
-                        onClick={() => toggleBookmark(q.id)}
+                        onClick={() => toggleBookmark(q)}
                         className={`p-1.5 rounded-lg border transition ${
                           isBookmarked
                             ? "bg-brand-50 border-brand-300 text-brand-700"
