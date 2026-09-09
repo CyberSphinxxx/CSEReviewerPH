@@ -121,4 +121,39 @@ describe("Generic Exam Engine — Question Selection", () => {
       expect(q.choices.map((c) => c.choiceLabel)).toEqual(["A", "B", "C", "D"]);
     }
   });
+
+  it("preserves choice order when lockChoiceOrder is true", () => {
+    const lockedQuestion: EngineQuestion = {
+      ...createMockQuestion("q-locked", "sub-1"),
+      lockChoiceOrder: true,
+      choices: [
+        { id: "c1", choiceLabel: "A", text: "Statement I only", isCorrect: false, order: 0 },
+        { id: "c2", choiceLabel: "B", text: "Statement II only", isCorrect: false, order: 1 },
+        { id: "c3", choiceLabel: "C", text: "Both I and II", isCorrect: true, order: 2 },
+        { id: "c4", choiceLabel: "D", text: "Neither I nor II", isCorrect: false, order: 3 },
+      ],
+    };
+
+    const rule: ExamRuleConfig = {
+      mode: "quick",
+      itemCount: 1,
+      timeLimitMinutes: 5,
+      passingScorePercentage: 80,
+      allowsFlagging: true,
+      hasContinuousTimer: true,
+    };
+
+    // Run multiple selections to guarantee no random shuffle reorders it
+    for (let i = 0; i < 10; i++) {
+      const [selected] = selectQuestionsForExam([lockedQuestion], rule);
+      expect(selected.choices.map((c) => c.text)).toEqual([
+        "Statement I only",
+        "Statement II only",
+        "Both I and II",
+        "Neither I nor II",
+      ]);
+      expect(selected.choices.map((c) => c.choiceLabel)).toEqual(["A", "B", "C", "D"]);
+    }
+  });
 });
+
