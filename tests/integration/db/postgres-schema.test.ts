@@ -2,7 +2,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { eq } from "drizzle-orm";
 import * as schema from "@/db/schema";
 
@@ -15,9 +15,15 @@ describe("PostgreSQL Integration — Real Database Engine (PGlite)", () => {
     client = new PGlite();
     db = drizzle(client, { schema });
 
-    // Apply the exact Drizzle migration SQL generated for the project
-    const migrationSql = readFileSync("src/db/migrations/0000_blushing_loners.sql", "utf-8");
-    await client.exec(migrationSql);
+    // Apply all Drizzle migration SQL files generated for the project in order
+    const migrationFiles = readdirSync("src/db/migrations")
+      .filter((f) => f.endsWith(".sql"))
+      .sort();
+
+    for (const file of migrationFiles) {
+      const migrationSql = readFileSync(`src/db/migrations/${file}`, "utf-8");
+      await client.exec(migrationSql);
+    }
   });
 
   it("verifies Postgres version and connection", async () => {
@@ -336,5 +342,20 @@ describe("PostgreSQL Integration — Real Database Engine (PGlite)", () => {
     expect(scoreResult.correctCount).toBe(4);
     expect(scoreResult.percentageScore).toBe(80);
     expect(scoreResult.isPassed).toBe(true);
+  });
+
+  it("verifies critical foreign key indexes exist in PostgreSQL catalog", async () => {
+    const res = await client.query<{ indexname: string; tablename: string }>(
+      "SELECT tablename, indexname FROM pg_indexes WHERE schemaname = 'public'"
+    );
+    const indexNames = new Set(res.rows.map((r) => r.indexname));
+
+    expect(indexNames.has("idx_questions_topic_id")).toBe(true);
+    expect(indexNames.has("idx_questions_topic_status")).toBe(true);
+    expect(indexNames.has("idx_choices_question_id")).toBe(true);
+    expect(indexNames.has("idx_test_attempts_user_id")).toBe(true);
+    expect(indexNames.has("idx_user_answers_attempt_id")).toBe(true);
+    expect(indexNames.has("idx_bookmarks_user_id")).toBe(true);
+    expect(indexNames.has("idx_sessions_user_id")).toBe(true);
   });
 });
