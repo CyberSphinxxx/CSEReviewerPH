@@ -1,50 +1,69 @@
-import { pgTable, text, boolean, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, boolean, integer, timestamp, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { topics } from "./subjects";
 
-export const questions = pgTable("questions", {
-  id: text("id").primaryKey(),
-  topicId: text("topic_id")
-    .notNull()
-    .references(() => topics.id, { onDelete: "cascade" }),
-  questionText: text("question_text").notNull(),
-  explanation: text("explanation").notNull(), // Detailed pedagogical rationale
-  difficulty: text("difficulty").notNull().default("medium"), // 'easy' | 'medium' | 'hard' | 'very_hard'
-  language: text("language").notNull().default("en"), // 'en' | 'fil'
-  status: text("status").notNull().default("draft"), // 'draft' | 'under_review' | 'approved' | 'published' | 'archived'
-  isSeedData: boolean("is_seed_data").notNull().default(false),
-  authorId: text("author_id"),
-  reviewerId: text("reviewer_id"),
-  relevantDate: timestamp("relevant_date", { withTimezone: true }),
-  publicationDate: timestamp("publication_date", { withTimezone: true }),
-  expirationDate: timestamp("expiration_date", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const questions = pgTable(
+  "questions",
+  {
+    id: text("id").primaryKey(),
+    topicId: text("topic_id")
+      .notNull()
+      .references(() => topics.id, { onDelete: "cascade" }),
+    questionText: text("question_text").notNull(),
+    explanation: text("explanation").notNull(), // Detailed pedagogical rationale
+    difficulty: text("difficulty").notNull().default("medium"), // 'easy' | 'medium' | 'hard' | 'very_hard'
+    language: text("language").notNull().default("en"), // 'en' | 'fil'
+    status: text("status").notNull().default("draft"), // 'draft' | 'under_review' | 'approved' | 'published' | 'archived'
+    isSeedData: boolean("is_seed_data").notNull().default(false),
+    authorId: text("author_id"),
+    reviewerId: text("reviewer_id"),
+    relevantDate: timestamp("relevant_date", { withTimezone: true }),
+    publicationDate: timestamp("publication_date", { withTimezone: true }),
+    expirationDate: timestamp("expiration_date", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_questions_topic_id").on(table.topicId),
+    index("idx_questions_topic_status").on(table.topicId, table.status),
+  ]
+);
 
-export const choices = pgTable("choices", {
-  id: text("id").primaryKey(),
-  questionId: text("question_id")
-    .notNull()
-    .references(() => questions.id, { onDelete: "cascade" }),
-  choiceLabel: text("choice_label").notNull(), // 'A' | 'B' | 'C' | 'D' | 'E'
-  text: text("text").notNull(),
-  isCorrect: boolean("is_correct").default(false).notNull(),
-  order: integer("order").default(0).notNull(),
-  explanation: text("explanation"),
-});
+export const choices = pgTable(
+  "choices",
+  {
+    id: text("id").primaryKey(),
+    questionId: text("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "cascade" }),
+    choiceLabel: text("choice_label").notNull(), // 'A' | 'B' | 'C' | 'D' | 'E'
+    text: text("text").notNull(),
+    isCorrect: boolean("is_correct").default(false).notNull(),
+    order: integer("order").default(0).notNull(),
+    explanation: text("explanation"),
+  },
+  (table) => [
+    index("idx_choices_question_id").on(table.questionId),
+  ]
+);
 
-export const questionReports = pgTable("question_reports", {
-  id: text("id").primaryKey(),
-  questionId: text("question_id")
-    .notNull()
-    .references(() => questions.id, { onDelete: "cascade" }),
-  userId: text("user_id"),
-  reason: text("reason").notNull(),
-  comments: text("comments"),
-  status: text("status").notNull().default("pending"), // 'pending' | 'reviewed' | 'resolved'
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const questionReports = pgTable(
+  "question_reports",
+  {
+    id: text("id").primaryKey(),
+    questionId: text("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "cascade" }),
+    userId: text("user_id"),
+    reason: text("reason").notNull(),
+    comments: text("comments"),
+    status: text("status").notNull().default("pending"), // 'pending' | 'reviewed' | 'resolved'
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    index("idx_question_reports_question_id").on(table.questionId),
+  ]
+);
 
 export const questionsRelations = relations(questions, ({ one, many }) => ({
   topic: one(topics, {
