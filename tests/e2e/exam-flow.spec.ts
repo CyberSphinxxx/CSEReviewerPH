@@ -84,4 +84,41 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
     await expect(page.getByText(/Subtest Performance Breakdown/i)).toBeVisible();
     await expect(page.getByText(/Detailed Answer Review/i)).toBeVisible();
   });
+
+  test("auto-saves in-progress exam, displays resume prompt on reload, and bookmarks question to dashboard", async ({ page }) => {
+    await page.goto("/exams/professional/quick");
+
+    // Select choice on Q1
+    const firstChoice = page.locator("button:has(span.rounded-lg:text('A'))").first();
+    await firstChoice.click();
+
+    // Reload the page
+    await page.reload();
+
+    // Verify resume prompt banner
+    await expect(page.getByText(/Unfinished Session Found/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /Resume Session/i })).toBeVisible();
+
+    // Click Resume
+    await page.getByRole("button", { name: /Resume Session/i }).click();
+    await expect(page.getByText(/Unfinished Session Found/i)).not.toBeVisible();
+
+    // Submit
+    await page.getByRole("button", { name: /submit/i }).first().click();
+    await page.locator("#confirm-submit-btn").click();
+    await page.waitForURL(/\/results\/.+/);
+
+    // Click bookmark button on Q1
+    const bookmarkBtn = page.getByTitle("Bookmark Question").first();
+    await bookmarkBtn.click();
+
+    // Navigate to dashboard
+    await page.goto("/dashboard");
+    await expect(page.getByText("Your Progress is Saved Locally")).toBeVisible();
+    await expect(page.getByText("Export Backup (JSON)")).toBeVisible();
+
+    // Check Bookmarks page
+    await page.goto("/dashboard/bookmarks");
+    await expect(page.getByRole("button", { name: /Practice Bookmarks/i })).toBeVisible();
+  });
 });
