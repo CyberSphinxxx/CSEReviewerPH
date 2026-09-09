@@ -12,9 +12,9 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **`npm run check:architecture`**: ✅ **PASSED** (Strictly zero hardcoded exam-slug branching inside `src/features/exam-engine/`).
 - **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with 0 errors).
 - **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
-- **`npm run test`**: ✅ **PASSED** (63 unit & real PostgreSQL integration tests across 14 test suites passing).
+- **`npm run test`**: ✅ **PASSED** (82 unit & real PostgreSQL integration tests across 16 test suites passing).
 - **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 10 routes compiled and prerendered, including `/api/health`).
-- **`npm run test:e2e`**: ✅ **PASSED** (Playwright end-to-end test suite verified Quick Test flow, flagging, timer countdown, review modal, score calculation, timeout auto-submit, results score framing, and 170-item Full Mock Exam).
+- **`npm run test:e2e`**: ✅ **PASSED** (5 Playwright end-to-end browser test suites passing: Landing page, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, and guest localStorage draft auto-save & reload resumption).
 
 ---
 
@@ -121,6 +121,48 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
   - Created `docs/vercel-deployment.md` step-by-step deployment and migration runbook.
   - Updated `.env.example` with Vercel deployment variables.
 
+### Phase 3.6: Guest Local Storage & Offline-First Persistence
+- **Unified Typed Storage Layer (`src/lib/storage/`)**:
+  - `types.ts`: Strongly typed schemas for `StoredAttemptDetails`, `AttemptSummary`, `StoredMistakeItem`, `StoredBookmarkItem`, `ActiveExamSessionDraft`, `StudyStreakData`, and `GuestBackupPayload`.
+  - `local-storage-service.ts`: SSR-safe, quota-resilient client with automatic legacy key migration (`attempts_history`, `mistake_bank`, `bookmarked_question_ids`).
+- **Exam Session Auto-Save & Resumption (`ExamRunner.tsx`)**:
+  - Continuous automatic draft saving of examinee answers, flags, and remaining timer on state changes.
+  - Non-intrusive **"Unfinished Session Found"** prompt card displaying answered count and time remaining with `[Resume Session]` and `[Discard & Start Fresh]` options.
+  - Automatic draft cleanup upon exam completion or manual discard.
+- **Offline Mistake Bank & Bookmarks**:
+  - Mistake Bank auto-populated upon test completion with full question payloads.
+  - Added "Mark as Mastered" dismissal action per question in `/dashboard/mistakes`.
+  - Bookmarks stored with complete question content to support custom and dynamic drills in `/dashboard/bookmarks`.
+- **Dynamic Dashboard Analytics & Privacy Controls (`DashboardView.tsx`)**:
+  - Dynamic **Civil Service Subtest Readiness** accuracy percentages calculated from actual recorded test attempts.
+  - Actual calendar-day **Study Streak** tracking.
+  - **Guest Offline Storage & RA 10173 Compliance Banner**:
+    - **Export Backup (JSON)**: 1-click download of all history, attempts, mistakes, and bookmarks (`csereviewer-backup-*.json`).
+    - **Restore Backup**: Modal file reader that validates backup schema and restores client state.
+    - **Reset All Data**: Clean wipe of all local progress and history.
+
+### Phase 3.7: Comprehensive Audit Fixes & Scalability Hardening
+- **Exam Timer Wall-Clock Delta Reconciliation (`ExamRunner.tsx`)**:
+  - Replaced naive `setInterval` constant 1-second ticks with real wall-clock delta calculation using `Date.now()`.
+  - Added `visibilitychange` listener to instantly sync elapsed time when examinees switch tabs or wake sleeping devices.
+  - Added unit test suite `tests/unit/exam-engine/timer-drift.test.ts` verifying time decrements and auto-submit across multi-minute jumps.
+- **Database Performance & Foreign Key Indexes (`src/db/schema/`)**:
+  - Added explicit B-tree indexes across all foreign keys in `questions`, `choices`, `question_reports`, `test_attempts`, `user_answers`, `bookmarks`, `user_progress`, `sessions`, and `accounts`.
+  - Generated Drizzle migration `src/db/migrations/0001_soft_spiral.sql`.
+  - Verified with real in-memory PostgreSQL engine in `tests/integration/db/postgres-schema.test.ts`, confirming indexes exist in `pg_indexes`.
+- **Client Bundle Scalability & Decoupling (`local-storage-service.ts`)**:
+  - Removed unused static dataset imports (`SEED_QUESTIONS`, `SEED_SUBJECTS`) from client-side storage service.
+  - Defined lightweight metadata fallback to eliminate bundle bloat from growing question banks.
+- **Storage LRU Eviction & Sanitization (`local-storage-service.ts`)**:
+  - Implemented LRU eviction policy keeping the 20 most recent detailed attempt breakdowns while preserving entire summary history.
+  - Sanitized backup JSON import against prototype pollution keys (`__proto__`, `constructor`) and added 2MB payload size limit.
+- **Content Security Policy (`next.config.ts`)**:
+  - Configured strict CSP header tailored for Next.js App Router.
+- **Exam Engine Choice Order Lock (`question-selector.ts`, `types.ts`)**:
+  - Added optional `lockChoiceOrder` flag on `EngineQuestion` to support questions with dependent choices (e.g. "Both A and B") without random shuffling breaking question logic.
+- **Multi-Tab State Synchronization (`DashboardView.tsx`)**:
+  - Added `window.addEventListener('storage')` to reload dashboard state when exams or bookmarks are modified across multiple tabs.
+
 ---
 
 ## Blocked
@@ -129,8 +171,8 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 ---
 
 ## Needs Human
-The platform runs completely in offline/dev fallback mode for autonomous evaluation. When ready for production launch:
-1. **Database URL**: Supply a hosted PostgreSQL connection string (Supabase, Neon, Railway) in `.env.local` as `DATABASE_URL`, then run `npm run db:migrate && npm run db:seed`.
+The platform runs with a live Neon serverless PostgreSQL database connected, migrated, and seeded. When ready for full production traffic:
+1. ~~**Database URL**: Supply a hosted PostgreSQL connection string~~ — ✅ **COMPLETED**: Neon Serverless PostgreSQL (Singapore `sin1`) connected via Vercel integration, all migrations applied (`0000` & `0001`), and full CSE exam hierarchy seeded.
 2. **Auth Secret**: Provide production secret keys in `BETTER_AUTH_SECRET` and domain in `BETTER_AUTH_URL`.
 3. **Analytics & Monitoring**: Supply production PostHog and Sentry credentials (`NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_SENTRY_DSN`) when ready for user traffic.
 4. **Publishing Questions**: Per content authoring guidelines, real questions should be reviewed by subject matter experts and published on human schedule (`Draft` -> `Under Review` -> `Approved` -> `Published`).
