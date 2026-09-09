@@ -81,12 +81,31 @@ export function prepareExamSession(
   }
 ): { session: ExamSessionState; questions: EngineQuestion[]; rules: ExamRuleConfig } {
   const level = SEED_LEVELS.find((l) => l.slug === levelSlug) || SEED_LEVELS[0];
+  // Find candidate questions
+  let candidatePool = SEED_QUESTIONS;
+  if (options?.topicId) {
+    candidatePool = SEED_QUESTIONS.filter((q) => q.topicId === options.topicId);
+  }
+
+  // Default item count and timing per mode
+  const defaultItemCount =
+    mode === "quick"
+      ? 10
+      : mode === "medium"
+      ? 30
+      : mode === "practice"
+      ? Math.min(options?.questionLimit ?? 10, candidatePool.length > 0 ? candidatePool.length : 10)
+      : 170;
+
+  const defaultTimeLimit =
+    mode === "quick" ? 10 : mode === "medium" ? 30 : mode === "practice" ? 15 : 190;
+
   const matchingRules = SEED_RULES.find((r) => r.examLevelId === level.id && r.mode === mode) || {
     id: `rule-default-${mode}`,
     examLevelId: level.id,
     mode,
-    itemCount: mode === "quick" ? 10 : mode === "medium" ? 30 : 170,
-    timeLimitMinutes: mode === "quick" ? 10 : mode === "medium" ? 30 : 190,
+    itemCount: defaultItemCount,
+    timeLimitMinutes: defaultTimeLimit,
     passingScorePercentage: 80,
     allowsFlagging: true,
     hasContinuousTimer: true,
@@ -94,15 +113,14 @@ export function prepareExamSession(
     difficultyDistribution: {},
   };
 
-  // Find candidate questions
-  let candidatePool = SEED_QUESTIONS;
-  if (options?.topicId) {
-    candidatePool = SEED_QUESTIONS.filter((q) => q.topicId === options.topicId);
-  }
-
   // Target item count
-  const targetCount = options?.questionLimit !== undefined ? options.questionLimit : matchingRules.itemCount;
-  const effectiveCount = targetCount;
+  const targetCount =
+    options?.questionLimit !== undefined
+      ? options.questionLimit
+      : mode === "practice"
+      ? defaultItemCount
+      : matchingRules.itemCount;
+  const effectiveCount = Math.max(1, targetCount);
 
   const ruleConfig: ExamRuleConfig = {
     ...matchingRules,
@@ -111,9 +129,14 @@ export function prepareExamSession(
 
   const selected = selectQuestionsForExam(candidatePool, ruleConfig, options?.exposureHistory);
 
-  // If pool was small in dev mock, expand with available seed questions so full test flow can be tested
+  // If pool was small in dev mock, expand with available seed questions for full/medium test flows, but never for topic practice
   let finalQuestions = selected;
-  if (finalQuestions.length < effectiveCount && candidatePool.length > 0) {
+  if (
+    mode !== "practice" &&
+    !options?.topicId &&
+    finalQuestions.length < effectiveCount &&
+    candidatePool.length > 0
+  ) {
     while (finalQuestions.length < effectiveCount) {
       const needed = effectiveCount - finalQuestions.length;
       const clone = candidatePool.slice(0, needed).map((q, idx) => ({
@@ -122,6 +145,8 @@ export function prepareExamSession(
       }));
       finalQuestions = [...finalQuestions, ...clone];
     }
+  } else if (finalQuestions.length === 0 && candidatePool.length > 0) {
+    finalQuestions = candidatePool.slice(0, effectiveCount);
   }
 
   const session = createExamSession(
@@ -133,6 +158,9 @@ export function prepareExamSession(
   return {
     session,
     questions: finalQuestions,
-    rules: ruleConfig,
+    rules: {
+      ...ruleConfig,
+      itemCount: finalQuestions.length,
+    },
   };
 }
