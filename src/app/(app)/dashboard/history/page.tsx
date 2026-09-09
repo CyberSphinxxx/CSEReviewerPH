@@ -2,28 +2,23 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { History, ChevronLeft, Award } from "lucide-react";
-
-interface HistoryItem {
-  id: string;
-  title: string;
-  mode: string;
-  percentage: number;
-  passed: boolean;
-  date: string;
-}
+import { History, ChevronLeft, Award, Trash2 } from "lucide-react";
+import { LocalStorageService, type AttemptSummary } from "@/lib/storage";
 
 export default function HistoryPage() {
-  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [history, setHistory] = useState<AttemptSummary[]>([]);
 
   useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("attempts_history") || "[]");
-      setHistory(saved);
-    } catch {
-      // ignore
-    }
+    setHistory(LocalStorageService.getAttemptHistory());
   }, []);
+
+  const handleDelete = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (confirm("Are you sure you want to delete this test attempt record?")) {
+      LocalStorageService.deleteAttempt(id);
+      setHistory((prev) => prev.filter((h) => h.id !== id));
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -80,6 +75,14 @@ export default function HistoryPage() {
                     >
                       View Breakdown
                     </Link>
+
+                    <button
+                      onClick={(e) => handleDelete(item.id, e)}
+                      className="p-2 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
+                      title="Delete attempt record"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               ))}
