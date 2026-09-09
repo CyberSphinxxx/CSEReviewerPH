@@ -8,6 +8,13 @@
       "when": 1788653568323,
       "tag": "0000_blushing_loners",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788928737470,
+      "tag": "0001_soft_spiral",
+      "breakpoints": true
     }
   ]
 }
