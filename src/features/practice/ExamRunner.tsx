@@ -29,6 +29,13 @@ import {
   Sparkles,
 } from "lucide-react";
 
+import {
+  LocalStorageService,
+  type ActiveExamSessionDraft,
+  type StoredUserAnswer,
+  type StoredAttemptDetails,
+} from "@/lib/storage";
+
 interface ExamRunnerProps {
   initialQuestions: EngineQuestion[];
   rules: ExamRuleConfig;
@@ -44,11 +51,68 @@ export function ExamRunner({
   subtitle,
 }: ExamRunnerProps) {
   const router = useRouter();
+  const levelSlug = title.toLowerCase().includes("subprof") ? "subprofessional" : "professional";
+  const topicId =
+    initialQuestions[0]?.topicId && rules.mode === "practice"
+      ? initialQuestions[0].topicId
+      : undefined;
+
+  const [savedDraft, setSavedDraft] = useState<ActiveExamSessionDraft | null>(null);
+  const [showResumeBanner, setShowResumeBanner] = useState(false);
+  const startedAtRef = useRef<string>(new Date().toISOString());
 
   // Initialize session state
   const [session, setSession] = useState<ExamSessionState>(() =>
     createExamSession(initialQuestions, rules.timeLimitMinutes, rules.allowsFlagging)
   );
+
+  // Check for existing active draft on mount
+  useEffect(() => {
+    const draft = LocalStorageService.getActiveDraft(levelSlug, rules.mode, topicId);
+    if (
+      draft &&
+      draft.questions.length === initialQuestions.length &&
+      Object.keys(draft.answers).length > 0
+    ) {
+      setSavedDraft(draft);
+      setShowResumeBanner(true);
+    }
+  }, [levelSlug, rules.mode, topicId, initialQuestions.length]);
+
+  const handleResumeDraft = () => {
+    if (!savedDraft) return;
+    const restoredAnswers = new Map();
+    for (const [qId, a] of Object.entries(savedDraft.answers)) {
+      restoredAnswers.set(qId, {
+        questionId: a.questionId,
+        selectedChoiceId: a.selectedChoiceId,
+        isFlagged: Boolean(a.isFlagged),
+        timeSpentSeconds: a.timeSpentSeconds || 0,
+      });
+    }
+    setSession({
+      totalQuestions: savedDraft.questions.length,
+      currentIndex: Math.min(savedDraft.currentQuestionIndex, savedDraft.questions.length - 1),
+      answers: restoredAnswers,
+      timer: {
+        totalSeconds: savedDraft.rules.timeLimitMinutes * 60,
+        remainingSeconds: savedDraft.remainingSeconds,
+        isExpired: savedDraft.remainingSeconds <= 0,
+        isWarning: savedDraft.remainingSeconds <= 300,
+      },
+      isReviewing: false,
+      isSubmitted: false,
+      allowsFlagging: savedDraft.rules.allowsFlagging,
+    });
+    startedAtRef.current = savedDraft.startedAt;
+    setShowResumeBanner(false);
+  };
+
+  const handleDiscardDraft = () => {
+    LocalStorageService.clearActiveDraft(levelSlug, rules.mode, topicId);
+    setShowResumeBanner(false);
+    setSavedDraft(null);
+  };
 
   // Allow testExpirySeconds query param for automated e2e testing of timeout auto-submit
   useEffect(() => {
@@ -79,6 +143,44 @@ export function ExamRunner({
   const sessionRef = useRef(session);
   sessionRef.current = session;
 
+  // Auto-save active draft to LocalStorageService
+  useEffect(() => {
+    if (isSubmittingRef.current || session.timer.isExpired) return;
+
+    if (session.answers.size > 0 || session.timer.remainingSeconds < session.timer.totalSeconds) {
+      const answersObj: Record<string, StoredUserAnswer> = {};
+      const flaggedIds: string[] = [];
+
+      session.answers.forEach((ans, qId) => {
+        answersObj[qId] = {
+          questionId: ans.questionId,
+          selectedChoiceId: ans.selectedChoiceId ?? undefined,
+          isFlagged: Boolean(ans.isFlagged),
+          timeSpentSeconds: ans.timeSpentSeconds || 0,
+        };
+        if (ans.isFlagged) {
+          flaggedIds.push(qId);
+        }
+      });
+
+      LocalStorageService.saveActiveDraft({
+        id: `draft-${levelSlug}-${rules.mode}`,
+        levelSlug,
+        mode: rules.mode,
+        title,
+        subtitle,
+        rules,
+        questions: initialQuestions,
+        answers: answersObj,
+        flaggedQuestionIds: flaggedIds,
+        currentQuestionIndex: session.currentIndex,
+        remainingSeconds: session.timer.remainingSeconds,
+        startedAt: startedAtRef.current,
+        lastSavedAt: new Date().toISOString(),
+      });
+    }
+  }, [session, levelSlug, rules, title, subtitle, initialQuestions, topicId]);
+
   // Submit handler
   const handleSubmit = useCallback(() => {
     if (isSubmittingRef.current) return;
@@ -95,69 +197,64 @@ export function ExamRunner({
       timeSpent
     );
 
-    // Save attempt into localStorage for client-side review and history
+    // Save attempt into LocalStorageService
     const attemptId = `attempt-${Date.now()}`;
-    const attemptRecord = {
+    const attemptRecord: StoredAttemptDetails = {
       id: attemptId,
       title,
       mode: rules.mode,
       rules,
       questions: initialQuestions,
-      answers: answersList,
+      answers: answersList.map((a) => ({
+        questionId: a.questionId,
+        selectedChoiceId: a.selectedChoiceId || undefined,
+        isFlagged: a.isFlagged,
+        timeSpentSeconds: a.timeSpentSeconds,
+      })),
       scoreResult,
       completedAt: new Date().toISOString(),
     };
 
-    try {
-      localStorage.setItem(`attempt_${attemptId}`, JSON.stringify(attemptRecord));
-
-      // Append to attempts list
-      const existingHistory = JSON.parse(localStorage.getItem("attempts_history") || "[]");
-      existingHistory.unshift({
-        id: attemptId,
-        title,
-        mode: rules.mode,
-        percentage: scoreResult.percentageScore,
-        passed: scoreResult.isPassed,
-        date: new Date().toISOString(),
-      });
-      localStorage.setItem("attempts_history", JSON.stringify(existingHistory));
-
-      // Update mistake bank
-      const incorrectQuestions = initialQuestions.filter((q) => {
-        const userAns = currentSession.answers.get(q.id);
-        const correctChoice = q.choices.find((c) => c.isCorrect);
-        return !userAns?.selectedChoiceId || userAns.selectedChoiceId !== correctChoice?.id;
-      });
-
-      const currentMistakes = JSON.parse(localStorage.getItem("mistake_bank") || "[]");
-      const existingMistakeIds = new Set(currentMistakes.map((m: EngineQuestion) => m.id));
-      for (const m of incorrectQuestions) {
-        if (!existingMistakeIds.has(m.id)) {
-          currentMistakes.push(m);
-        }
-      }
-      localStorage.setItem("mistake_bank", JSON.stringify(currentMistakes));
-    } catch {
-      // ignore storage error
-    }
+    LocalStorageService.recordCompletedAttempt(attemptRecord);
+    LocalStorageService.clearActiveDraft(levelSlug, rules.mode, topicId);
 
     // Redirect to results page
     router.push(`/results/${attemptId}`);
-  }, [initialQuestions, rules, title, router]);
+  }, [initialQuestions, rules, title, router, levelSlug, topicId]);
 
-  // Continuous Single Timer Tick
+  // Continuous Single Timer Tick with Wall-Clock Drift Reconciliation
+  const lastTickRef = useRef<number>(Date.now());
+
   useEffect(() => {
     if (session.timer.isExpired) return;
 
-    const interval = setInterval(() => {
+    lastTickRef.current = Date.now();
+
+    const tick = () => {
+      const now = Date.now();
+      const elapsedSeconds = Math.max(1, Math.floor((now - lastTickRef.current) / 1000));
+      lastTickRef.current = now;
+
       setSession((prev) => {
         if (prev.timer.isExpired) return prev;
-        return stepTimer(prev, 1);
+        return stepTimer(prev, elapsedSeconds);
       });
-    }, 1000);
+    };
 
-    return () => clearInterval(interval);
+    const interval = setInterval(tick, 1000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        tick();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [session.timer.isExpired]);
 
   // Auto-submit on timer expiry
@@ -179,11 +276,6 @@ export function ExamRunner({
           <div>
             <h1 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
               <span>{title}</span>
-              {currentQuestion?.isSeedData && (
-                <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded bg-amber-100 text-amber-800">
-                  Seed Data
-                </span>
-              )}
             </h1>
             {subtitle && <p className="text-xs text-slate-500 hidden sm:block">{subtitle}</p>}
           </div>
@@ -201,14 +293,14 @@ export function ExamRunner({
               <span id="exam-timer">{formatTimeRemaining(session.timer.remainingSeconds)}</span>
             </div>
 
-            {/* Navigator Palette Button (Mobile & Desktop) */}
+            {/* Question Navigator Button (Mobile & Desktop) */}
             <button
               onClick={() => setShowNavigator(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium transition shadow-sm"
-              aria-label="Open Question Palette"
+              aria-label="Open Question Palette / Questions"
             >
               <LayoutGrid className="w-4 h-4 text-slate-500" />
-              <span className="hidden sm:inline">Palette</span>
+              <span className="hidden sm:inline">Questions</span>
             </button>
 
             {/* Review & Submit Button */}
@@ -222,6 +314,44 @@ export function ExamRunner({
           </div>
         </div>
       </header>
+
+      {/* Resume Session Banner */}
+      {showResumeBanner && savedDraft && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-amber-900 shadow-inner">
+          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
+            <div className="flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>Unfinished Session Found:</strong> You have an in-progress test with{" "}
+                <span className="font-semibold text-amber-950">
+                  {Object.keys(savedDraft.answers).length} answered
+                </span>{" "}
+                and{" "}
+                <span className="font-semibold text-amber-950">
+                  {formatTimeRemaining(savedDraft.remainingSeconds)} remaining
+                </span>
+                .
+              </span>
+            </div>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <button
+                type="button"
+                onClick={handleResumeDraft}
+                className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg text-xs transition shadow-sm"
+              >
+                Resume Session
+              </button>
+              <button
+                type="button"
+                onClick={handleDiscardDraft}
+                className="px-3 py-1.5 text-slate-600 hover:text-slate-800 text-xs font-medium transition"
+              >
+                Discard &amp; Start Fresh
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Testing Content Area */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 md:p-8">
