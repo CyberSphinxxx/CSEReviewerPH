@@ -1,57 +1,21 @@
 import Link from "next/link";
-import { BookOpen, CheckCircle2, Clock, Award, ShieldAlert, ArrowRight, Sparkles } from "lucide-react";
+import { BookOpen, CheckCircle2, Clock, ShieldAlert, ArrowRight, Sparkles } from "lucide-react";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
-      {/* Top Banner / Trust Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/90 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="h-10 w-10 rounded-xl bg-brand-700 flex items-center justify-center text-white font-bold shadow-md shadow-brand-700/20">
-              <Award className="h-6 w-6 text-gold-400" />
-            </div>
-            <div>
-              <span className="text-xl font-extrabold tracking-tight text-slate-900">
-                CSE<span className="text-brand-600">Reviewer</span>
-                <span className="text-gold-600 ml-0.5">PH</span>
-              </span>
-              <span className="hidden sm:inline-block ml-2 px-2 py-0.5 text-xs font-semibold bg-brand-50 text-brand-700 rounded-full border border-brand-200">
-                Civil Service Exam
-              </span>
-            </div>
-          </div>
-
-          <nav className="flex items-center space-x-4">
-            <Link
-              href="/exams/professional/quick"
-              className="text-sm font-medium text-slate-600 hover:text-brand-600 transition"
-            >
-              Quick Test
-            </Link>
-            <Link
-              href="/practice"
-              className="text-sm font-medium text-slate-600 hover:text-brand-600 transition"
-            >
-              Topics
-            </Link>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-brand-700 transition"
-            >
-              Dashboard
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
-      <main className="flex-1">
+      <main className="flex-1 animate-page-enter">
         <section className="relative overflow-hidden pt-12 pb-16 md:pt-20 md:pb-24 bg-gradient-to-b from-white via-brand-50/30 to-slate-50">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gold-50 border border-gold-300 text-gold-800 text-xs font-semibold mb-6">
               <Sparkles className="w-3.5 h-3.5 text-gold-600" />
-              <span>Built to match the real Civil Service PPT exam format</span>
+              <span>Built to match the real Civil Service PPT exam format &bull; csereviewph.com</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tight leading-tight">
@@ -70,6 +34,7 @@ export default function HomePage() {
             <div className="mt-10 flex flex-wrap justify-center gap-4">
               <Link
                 href="/exams/professional/full"
+                prefetch={true}
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-brand-700 text-white font-bold text-base shadow-lg shadow-brand-700/25 hover:bg-brand-800 transition transform active:scale-95"
               >
                 Start Full Pro Mock Exam (170 items)
@@ -78,6 +43,7 @@ export default function HomePage() {
 
               <Link
                 href="/exams/professional/quick"
+                prefetch={true}
                 className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-white text-slate-800 font-bold text-base border border-slate-300 shadow-sm hover:bg-slate-50 transition"
               >
                 Take Quick 10-Question Test
@@ -137,6 +103,7 @@ export default function HomePage() {
               </div>
               <Link
                 href="/exams/professional/quick"
+                prefetch={true}
                 className="mt-6 block text-center py-2.5 px-4 rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-800 font-semibold text-sm transition"
               >
                 Launch Quick Test &rarr;
@@ -159,6 +126,7 @@ export default function HomePage() {
               </div>
               <Link
                 href="/exams/professional/medium"
+                prefetch={true}
                 className="mt-6 block text-center py-2.5 px-4 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition"
               >
                 Launch Medium Test &rarr;
@@ -182,6 +150,7 @@ export default function HomePage() {
               </div>
               <Link
                 href="/exams/professional/full"
+                prefetch={true}
                 className="mt-6 block text-center py-2.5 px-4 rounded-lg bg-brand-800 hover:bg-brand-900 text-white font-semibold text-sm transition"
               >
                 Start Real Simulation &rarr;
@@ -189,22 +158,135 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* Study Guides & Strategy Articles Showcase */}
+        <section className="py-16 bg-white border-t border-slate-200">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold mb-3">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Comprehensive Learning Resources</span>
+                </div>
+                <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                  High-Yield Study Guides & Strategy
+                </h2>
+                <p className="text-slate-600 text-sm mt-1">
+                  Master the official syllabus rules, constitutional articles, and pacing formulas.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/guides"
+                  prefetch={true}
+                  className="text-xs font-bold text-brand-700 hover:text-brand-800 transition flex items-center gap-1"
+                >
+                  <span>All Study Guides</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <span className="text-slate-300">&bull;</span>
+                <Link
+                  href="/articles"
+                  prefetch={true}
+                  className="text-xs font-bold text-brand-700 hover:text-brand-800 transition flex items-center gap-1"
+                >
+                  <span>Strategy Articles</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+                <span className="text-slate-300">&bull;</span>
+                <Link
+                  href="/faq"
+                  prefetch={true}
+                  className="text-xs font-bold text-brand-700 hover:text-brand-800 transition flex items-center gap-1"
+                >
+                  <span>Exam FAQ</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Guides & Articles Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Card 1: RA 6713 */}
+              <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:shadow-md transition flex flex-col justify-between">
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-brand-700 px-2.5 py-0.5 rounded-full bg-brand-50 border border-brand-100">
+                    General Information
+                  </span>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    <Link href="/guides/ra-6713-code-of-conduct" prefetch={true} className="hover:text-brand-700 transition">
+                      RA 6713: The 8 Norms of Conduct & Ethical Standards
+                    </Link>
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Essential public servant obligations, prohibited gifts, conflict of interest rules, and annual SALN filing deadlines.
+                  </p>
+                </div>
+                <Link
+                  href="/guides/ra-6713-code-of-conduct"
+                  prefetch={true}
+                  className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:underline"
+                >
+                  Read Study Guide &rarr;
+                </Link>
+              </div>
+
+              {/* Card 2: 67-Second Rule */}
+              <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:shadow-md transition flex flex-col justify-between">
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-100">
+                    Exam Strategy
+                  </span>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    <Link href="/articles/continuous-timer-pacing-strategy" prefetch={true} className="hover:text-brand-700 transition">
+                      The 67-Second Rule: Continuous Timer Pacing Strategy
+                    </Link>
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    How to allocate your 190 minutes across four phases so you never run out of time on the 170-item CSE-PPT.
+                  </p>
+                </div>
+                <Link
+                  href="/articles/continuous-timer-pacing-strategy"
+                  prefetch={true}
+                  className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:underline"
+                >
+                  Read Article &rarr;
+                </Link>
+              </div>
+
+              {/* Card 3: 1987 Constitution */}
+              <div className="p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:bg-white hover:shadow-md transition flex flex-col justify-between">
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-100">
+                    Constitutional Law
+                  </span>
+                  <h3 className="font-bold text-slate-900 text-base">
+                    <Link href="/guides/philippine-constitution-essentials" prefetch={true} className="hover:text-brand-700 transition">
+                      1987 Philippine Constitution: High-Yield Provisions
+                    </Link>
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Article III Bill of Rights, Citizenship, and the mandates of the 3 Independent Constitutional Commissions.
+                  </p>
+                </div>
+                <Link
+                  href="/guides/philippine-constitution-essentials"
+                  prefetch={true}
+                  className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:underline"
+                >
+                  Read Study Guide &rarr;
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
-      {/* Footer & Legal Disclosure */}
-      <footer className="border-t border-slate-200 bg-white py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 space-y-2">
-          <p className="font-semibold text-slate-700">
-            Civil Service Exam Reviewer Philippines (CSEReviewerPH)
-          </p>
-          <p>
-            Disclaimer: This reviewer platform is independently developed and is not affiliated with, endorsed by, or operated by the Philippine Civil Service Commission (CSC). All review questions and educational explanations are independently authored.
-          </p>
-          <p className="text-slate-400">
-            Compliant with the Philippine Data Privacy Act of 2012 (RA 10173).
-          </p>
-        </div>
-      </footer>
+      <AdSenseBanner slotId="homepage-bottom" />
+
+      <Footer />
     </div>
   );
 }
