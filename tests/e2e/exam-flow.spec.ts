@@ -1,9 +1,25 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Civil Service Exam Reviewer E2E Flows", () => {
+  test.beforeEach(async ({ context }) => {
+    // Seed cookie consent in localStorage so the banner is dismissed during exam interaction
+    await context.addInitScript(() => {
+      window.localStorage.setItem(
+        "csereviewer_cookie_consent",
+        JSON.stringify({
+          essential: true,
+          analytics: false,
+          ads: false,
+          hasChosen: true,
+          updatedAt: Date.now(),
+        })
+      );
+    });
+  });
+
   test("loads landing page with exam preparation options", async ({ page }) => {
     await page.goto("/");
-    await expect(page).toHaveTitle(/CSE Reviewer PH/i);
+    await expect(page).toHaveTitle(/Civil Service Exam Reviewer/i);
     await expect(page.getByRole("heading", { level: 1 })).toContainText(/Pass the Philippine Civil Service Exam/i);
 
     // Verify presence of preparation mode cards
