@@ -71,7 +71,7 @@ export function DashboardView() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `csereviewer-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `csereviewph-backup-${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -128,7 +128,7 @@ export function DashboardView() {
   const studyStreak = streakDays;
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 animate-page-enter">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -146,6 +146,7 @@ export function DashboardView() {
           <div className="flex items-center gap-3">
             <Link
               href="/exams/professional/quick"
+              prefetch={true}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-sm font-bold shadow-md shadow-brand-700/20 transition"
             >
               <Clock className="w-4 h-4" />
@@ -219,6 +220,7 @@ export function DashboardView() {
             <div className="mt-6 flex items-center gap-3">
               <Link
                 href="/dashboard/mistakes"
+                prefetch={true}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow transition"
               >
                 <span>Open Mistake Bank</span>
@@ -247,6 +249,7 @@ export function DashboardView() {
             <div className="mt-6 flex items-center gap-3">
               <Link
                 href="/dashboard/bookmarks"
+                prefetch={true}
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs shadow transition"
               >
                 <span>View Bookmarks</span>
@@ -333,6 +336,7 @@ export function DashboardView() {
             </h2>
             <Link
               href="/dashboard/history"
+              prefetch={true}
               className="text-xs font-semibold text-brand-700 hover:text-brand-800"
             >
               View Full History &rarr;
