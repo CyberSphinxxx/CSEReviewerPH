@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { getAllExamLevels } from "@/features/practice/practice-service";
 import { BookOpen, ChevronRight, Award } from "lucide-react";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
+import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 
 export const metadata = {
-  title: "Practice by Topic — Philippine Civil Service Exam Reviewer",
+  title: "Practice by Topic — csereviewph.com",
   description: "Targeted practice by subtest and topic for CSE Professional and Subprofessional.",
 };
 
@@ -11,7 +14,9 @@ export default function PracticeTopicsPage() {
   const levels = getAllExamLevels();
 
   return (
-    <div className="min-h-screen bg-slate-50 py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <Header />
+      <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8 animate-page-enter">
       <div className="max-w-5xl mx-auto space-y-10">
         {/* Header */}
         <div>
@@ -52,6 +57,7 @@ export default function PracticeTopicsPage() {
                       <Link
                         key={top.id}
                         href={`/practice/${top.id}`}
+                        prefetch={true}
                         className="p-4 rounded-xl border border-slate-200 hover:border-brand-300 hover:bg-brand-50/30 transition flex items-center justify-between group"
                       >
                         <div>
@@ -71,7 +77,12 @@ export default function PracticeTopicsPage() {
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      </main>
+
+      <AdSenseBanner slotId="practice-directory-bottom" />
+
+      <Footer />
     </div>
   );
 }
