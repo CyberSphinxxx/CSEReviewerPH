@@ -51,6 +51,7 @@ export default function MistakesPage() {
         <div className="flex items-center justify-between">
           <Link
             href="/dashboard"
+            prefetch={true}
             className="text-sm font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1"
           >
             <ChevronLeft className="w-4 h-4" /> Back to Dashboard
