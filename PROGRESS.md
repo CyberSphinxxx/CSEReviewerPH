@@ -170,12 +170,36 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 
 ---
 
+## 🚀 Site Audit, Rebranding to csereviewph.com & Preloading Optimizations
+
+### 1. Site Audit Completed
+- **Architecture & Engine Compliance**: `src/features/exam-engine` strictly respects zero exam-identity branching (`npm run check:architecture` passes).
+- **Test Suite & Build Health**: 23 test suites and 120 tests pass against real PostgreSQL via PGlite WASM engine; Next.js 15 production build passes with 30 routes prerendered.
+- **Data Privacy & Security**: Compliant with RA 10173 and Google AdSense publisher requirements; CSP and HSTS headers enforced.
+
+### 2. Domain & Platform Rebranding to `csereviewph.com`
+- **Branding**: Header logo typography and Footer brand updated to `csereviewph.com` (`csereview` `ph` `.com`).
+- **Metadata & SEO**: Default title `csereviewph.com — Philippine Civil Service Exam Reviewer`, title template `%s | csereviewph.com`, OpenGraph siteName `csereviewph.com`, Schema.org `WebSite` JSON-LD structured data.
+- **Legal & Direct Contact**: Updated `support@csereviewph.com`, `privacy@csereviewph.com`, and non-affiliation disclaimers to `csereviewph.com`.
+- **Environment**: Updated default production fallback URL in `src/lib/env.ts` to `https://csereviewph.com`.
+- **Content Preservation**: 100% of educational exam items, subtest guides, constitutional explanations, and articles preserved intact per user specification.
+
+### 3. Website Optimization & Smooth Page Switching
+- **Explicit Next.js Link Preloading**: `prefetch={true}` enabled on Header navigation (`Topics`, `Study Guides`, `Articles`, `FAQ`, `Dashboard`), Footer links, Hero CTA buttons, exam launch cards, and topic directory.
+- **Top Navigation Progress Bar (`NavigationProgress.tsx`)**: Zero-dependency visual loading bar at the top of the viewport animating across route switches to eliminate perceived latency.
+- **Next.js Streaming Skeleton (`loading.tsx`)**: Global App Router loading state with pulse animation preventing blank/white flashes during route transitions.
+- **Error Boundaries & 404 Resilience**: Created custom branded `not-found.tsx` and `error.tsx` with instant recovery actions.
+- **Resource Hints & Page Entry Animations**: Added `preconnect` and `dns-prefetch` for external assets, `scroll-behavior: smooth`, and `.animate-page-enter` CSS transitions.
+
+---
+
 ## Needs Human
 The platform runs with a live Neon serverless PostgreSQL database connected, migrated, and seeded. When ready for full production traffic:
 1. ~~**Database URL**: Supply a hosted PostgreSQL connection string~~ — ✅ **COMPLETED**: Neon Serverless PostgreSQL (Singapore `sin1`) connected via Vercel integration, all migrations applied (`0000` & `0001`), and full CSE exam hierarchy seeded.
-2. **Auth Secret**: Provide production secret keys in `BETTER_AUTH_SECRET` and domain in `BETTER_AUTH_URL`.
-3. **Analytics & Monitoring**: Supply production PostHog and Sentry credentials (`NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_SENTRY_DSN`) when ready for user traffic.
-4. **Publishing Questions**: Per content authoring guidelines, real questions should be reviewed by subject matter experts and published on human schedule (`Draft` -> `Under Review` -> `Approved` -> `Published`).
+2. **Domain Configuration**: Point `csereviewph.com` DNS records (A / CNAME) to Vercel production deployment.
+3. **Auth Secret**: Provide production secret keys in `BETTER_AUTH_SECRET` and domain in `BETTER_AUTH_URL`.
+4. **Analytics & Monitoring**: Supply production PostHog and Sentry credentials (`NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_SENTRY_DSN`) when ready for user traffic.
+5. **Publishing Questions**: Per content authoring guidelines, real questions should be reviewed by subject matter experts and published on human schedule (`Draft` -> `Under Review` -> `Approved` -> `Published`).
 
 ---
 
