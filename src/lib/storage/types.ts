@@ -53,6 +53,16 @@ export interface StoredMistakeItem {
   correctChoiceId?: string;
   addedAt: string;
   reviewCount: number;
+  box?: 1 | 2 | 3 | 4 | 5; // Leitner box (1: daily, 2: 3-day, 3: 7-day, 4: 14-day, 5: mastered)
+  nextReviewDue?: string; // ISO date string when due for review
+  consecutiveCorrect?: number;
+  lastReviewedAt?: string;
+}
+
+export interface TargetExamConfig {
+  targetDate: string; // YYYY-MM-DD
+  examName: string; // e.g., "August 2026 CSE-PPT"
+  dailyGoal: number; // e.g., 25 questions/day
 }
 
 export interface StoredBookmarkItem {

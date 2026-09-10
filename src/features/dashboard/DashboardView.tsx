@@ -6,6 +6,7 @@ import {
   LocalStorageService,
   type AttemptSummary,
   type SubjectReadinessMetric,
+  type TargetExamConfig,
 } from "@/lib/storage";
 import {
   Award,
@@ -24,6 +25,8 @@ import {
   Upload,
   RotateCcw,
   ShieldCheck,
+  Calendar,
+  Settings2,
 } from "lucide-react";
 
 export function DashboardView() {
@@ -33,6 +36,18 @@ export function DashboardView() {
   const [streakDays, setStreakDays] = useState(0);
   const [subjectReadiness, setSubjectReadiness] = useState<SubjectReadinessMetric[]>([]);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+
+  // Target Exam Countdown & Daily Goal State
+  const [targetConfig, setTargetConfig] = useState<TargetExamConfig>({
+    targetDate: "2027-03-21",
+    examName: "March 2027 CSE-PPT",
+    dailyGoal: 25,
+  });
+  const [dailyAnswered, setDailyAnswered] = useState(0);
+  const [isEditingTarget, setIsEditingTarget] = useState(false);
+  const [editDate, setEditDate] = useState("2027-03-21");
+  const [editName, setEditName] = useState("March 2027 CSE-PPT");
+  const [editGoal, setEditGoal] = useState(25);
 
   const loadDashboardData = () => {
     const savedHistory = LocalStorageService.getAttemptHistory();
@@ -49,6 +64,13 @@ export function DashboardView() {
 
     const readiness = LocalStorageService.getSubjectReadiness();
     setSubjectReadiness(readiness);
+
+    const config = LocalStorageService.getTargetExamConfig();
+    setTargetConfig(config);
+    setEditDate(config.targetDate);
+    setEditName(config.examName);
+    setEditGoal(config.dailyGoal);
+    setDailyAnswered(LocalStorageService.getDailyQuestionsAnswered());
   };
 
   useEffect(() => {
@@ -112,6 +134,30 @@ export function DashboardView() {
       setTimeout(() => setFeedbackMessage(null), 4000);
     }
   };
+
+  const handleSaveTarget = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newConfig: TargetExamConfig = {
+      targetDate: editDate,
+      examName: editName.trim() || "Target Exam",
+      dailyGoal: Math.max(5, Math.min(200, Number(editGoal) || 25)),
+    };
+    LocalStorageService.saveTargetExamConfig(newConfig);
+    setTargetConfig(newConfig);
+    setIsEditingTarget(false);
+    setFeedbackMessage("Target exam date & daily pacing goal updated!");
+    setTimeout(() => setFeedbackMessage(null), 4000);
+  };
+
+  // Target Exam Countdown Math
+  const targetTime = new Date(targetConfig.targetDate).getTime();
+  const diffTimeMs = targetTime - Date.now();
+  const daysUntilExam = Math.max(0, Math.ceil(diffTimeMs / (1000 * 60 * 60 * 24)));
+  const weeksUntilExam = Math.floor(daysUntilExam / 7);
+  const dailyProgressPercent = Math.min(
+    100,
+    Math.round((dailyAnswered / (targetConfig.dailyGoal || 25)) * 100)
+  );
 
   // Compute aggregate statistics
   const totalTests = history.length;
@@ -196,6 +242,142 @@ export function DashboardView() {
             <div className="text-3xl font-black text-slate-900">{estimatedQuestionsAnswered}</div>
             <div className="text-xs text-slate-500 font-medium mt-1">Across all sessions</div>
           </div>
+        </div>
+
+        {/* Target Exam Date Countdown & Daily Pacing Card */}
+        <div className="bg-gradient-to-br from-slate-900 via-brand-950 to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-md border border-slate-800 relative overflow-hidden">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5" />
+                  <span>Target Exam Pacing</span>
+                </span>
+                <span className="text-xs text-slate-400 font-medium">{targetConfig.examName}</span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+                {daysUntilExam > 0 ? (
+                  <>
+                    <span className="text-gold-400">{daysUntilExam} Days</span> Remaining
+                    <span className="text-sm font-normal text-slate-400 ml-2">
+                      ({weeksUntilExam} weeks until exam)
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-gold-400">Exam Day is Here!</span>
+                )}
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
+                Maintain consistent daily practice to build familiarity and stamina for the continuous 3-hour CSE-PPT.
+              </p>
+            </div>
+
+            {/* Daily Goal Gauge & Action */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 shrink-0">
+              <div className="space-y-1.5 min-w-[180px]">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span className="text-slate-300">Daily Goal</span>
+                  <span className="text-gold-400">{dailyAnswered} / {targetConfig.dailyGoal} items</span>
+                </div>
+                <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-500 ${
+                      dailyAnswered >= targetConfig.dailyGoal ? "bg-emerald-400" : "bg-gold-400"
+                    }`}
+                    style={{ width: `${dailyProgressPercent}%` }}
+                  />
+                </div>
+                <div className="text-[11px] text-slate-400">
+                  {dailyAnswered >= targetConfig.dailyGoal
+                    ? "✓ Daily goal accomplished!"
+                    : `${targetConfig.dailyGoal - dailyAnswered} more items to hit today's target`}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/exams/professional/quick"
+                  prefetch={true}
+                  className="px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-400 text-slate-950 font-bold text-xs shadow-sm transition text-center"
+                >
+                  Practice Now
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingTarget(!isEditingTarget)}
+                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition"
+                  title="Adjust Target Exam or Daily Goal"
+                >
+                  <Settings2 className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Inline Edit Form */}
+          {isEditingTarget && (
+            <form
+              onSubmit={handleSaveTarget}
+              className="mt-6 pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-4 gap-3 text-slate-900 animate-fade-in"
+            >
+              <div>
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">Target Exam Preset</label>
+                <select
+                  value={editDate}
+                  onChange={(e) => {
+                    setEditDate(e.target.value);
+                    if (e.target.value === "2027-03-21") setEditName("March 2027 CSE-PPT");
+                    if (e.target.value === "2027-08-08") setEditName("August 2027 CSE-PPT");
+                  }}
+                  className="w-full text-xs rounded-lg p-2 bg-white border border-slate-300"
+                >
+                  <option value="2027-03-21">March 21, 2027 (CSE-PPT Cycle 1)</option>
+                  <option value="2027-08-08">August 8, 2027 (CSE-PPT Cycle 2)</option>
+                  <option value="custom">Custom Date...</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">Target Date</label>
+                <input
+                  type="date"
+                  value={editDate === "custom" ? "" : editDate}
+                  onChange={(e) => setEditDate(e.target.value)}
+                  className="w-full text-xs rounded-lg p-2 bg-white border border-slate-300"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-300 mb-1">Daily Question Goal</label>
+                <input
+                  type="number"
+                  min={5}
+                  max={200}
+                  value={editGoal}
+                  onChange={(e) => setEditGoal(Number(e.target.value))}
+                  className="w-full text-xs rounded-lg p-2 bg-white border border-slate-300"
+                  required
+                />
+              </div>
+
+              <div className="flex items-end gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition"
+                >
+                  Save Target
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingTarget(false)}
+                  className="px-3 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
         </div>
 
         {/* Action Hub: Mistake Bank & Bookmarks & Quick Launch */}

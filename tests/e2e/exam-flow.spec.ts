@@ -144,13 +144,16 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
     await expect(page.locator("#exam-timer")).toBeVisible();
     await expect(page.getByText(/Question 1 of 10/i)).toBeVisible();
 
+    // Ensure container has active focus for keyboard event capture
+    await page.locator("main").click();
+
     // Press 'A' key to select choice A on Q1
-    await page.keyboard.press("a");
-    const choiceACard = page.locator("button:has(span.rounded-lg:text('A'))").first().locator("..");
+    await page.keyboard.press("KeyA");
+    const choiceACard = page.getByTestId("choice-card-A");
     await expect(choiceACard).toHaveClass(/border-brand-600/);
 
     // Press 'F' key to flag question
-    await page.keyboard.press("f");
+    await page.keyboard.press("KeyF");
     await expect(page.locator("#flag-question-button")).toContainText(/Flagged/i);
 
     // Press 'ArrowRight' to navigate to Question 2
@@ -175,5 +178,25 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
     // Close scratchpad
     await page.getByRole("button", { name: /Keep Working/i }).click();
     await expect(page.getByText(/Scratchpad & Arithmetic Canvas/i)).not.toBeVisible();
+
+    // Open Question Report Modal
+    await page.locator("#report-question-btn").click();
+    await expect(page.getByText("Report an Issue with Question")).toBeVisible();
+    await expect(page.getByText("Factual / Answer Key Error")).toBeVisible();
+    await page.getByRole("button", { name: /Cancel/i }).click();
+    await expect(page.getByText("Report an Issue with Question")).not.toBeVisible();
+  });
+
+  test("displays target exam countdown on dashboard and supports Leitner SRS filters in mistake bank", async ({ page }) => {
+    // 1. Check Target Exam Countdown & Daily Pacing Card
+    await page.goto("/dashboard");
+    await expect(page.getByText("Target Exam Pacing")).toBeVisible();
+    await expect(page.getByText(/Remaining/i)).toBeVisible();
+    await expect(page.getByText(/Daily Goal/i)).toBeVisible();
+
+    // 2. Open Mistake Bank
+    await page.goto("/dashboard/mistakes");
+    await expect(page.getByText("Leitner SRS")).toBeVisible();
+    await expect(page.getByText("Your Mistake Bank is empty!")).toBeVisible();
   });
 });

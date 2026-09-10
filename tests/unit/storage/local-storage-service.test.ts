@@ -413,5 +413,121 @@ describe("LocalStorageService — Guest Offline Storage", () => {
       expect(LocalStorageService.getAttemptDetails("safe-1")).not.toBeNull();
     });
   });
+
+  describe("Leitner Spaced Repetition (SRS) & Target Exam Countdown", () => {
+    it("initializes mistake items with Leitner Box 1 and immediately due status", () => {
+      const attempt: StoredAttemptDetails = {
+        id: "att-srs-1",
+        title: "CSE Professional — Diagnostic",
+        mode: "quick",
+        rules: {
+          mode: "quick",
+          itemCount: 1,
+          timeLimitMinutes: 10,
+          passingScorePercentage: 80,
+          allowsFlagging: true,
+          hasContinuousTimer: true,
+        },
+        questions: [mockQuestion],
+        answers: [
+          { questionId: mockQuestion.id, selectedChoiceId: "c2", isFlagged: false, timeSpentSeconds: 20 },
+        ],
+        scoreResult: {
+          totalQuestions: 1,
+          answeredCount: 1,
+          unansweredCount: 0,
+          correctCount: 0,
+          incorrectCount: 1,
+          rawScore: 0,
+          percentageScore: 0,
+          passingScorePercentage: 80,
+          isPassed: false,
+          timeSpentSeconds: 20,
+          subjectBreakdown: [],
+          topicBreakdown: [],
+          strengths: [],
+          weakAreas: ["Verbal Ability"],
+          recommendedTopics: [],
+        },
+        completedAt: new Date().toISOString(),
+      };
+
+      LocalStorageService.recordCompletedAttempt(attempt);
+
+      const mistakes = LocalStorageService.getMistakeBank();
+      expect(mistakes.length).toBe(1);
+      expect(mistakes[0].box).toBe(1);
+      expect(mistakes[0].consecutiveCorrect).toBe(0);
+      expect(mistakes[0].nextReviewDue).toBeDefined();
+
+      const due = LocalStorageService.getDueMistakes();
+      expect(due.length).toBe(1);
+      expect(due[0].id).toBe(mockQuestion.id);
+    });
+
+    it("progresses Leitner boxes when answered correctly and resets to Box 1 on error", () => {
+      // Seed a mistake
+      window.localStorage.setItem(
+        STORAGE_KEYS.MISTAKES,
+        JSON.stringify([
+          {
+            id: mockQuestion.id,
+            question: mockQuestion,
+            attemptId: "att-1",
+            addedAt: new Date().toISOString(),
+            reviewCount: 1,
+            box: 1,
+            consecutiveCorrect: 0,
+          },
+        ])
+      );
+
+      // 1. Correct answer promotes to Box 2
+      const step1 = LocalStorageService.updateMistakeSRS(mockQuestion.id, true);
+      expect(step1?.box).toBe(2);
+      expect(step1?.consecutiveCorrect).toBe(1);
+
+      // 2. Another correct answer promotes to Box 3
+      const step2 = LocalStorageService.updateMistakeSRS(mockQuestion.id, true);
+      expect(step2?.box).toBe(3);
+      expect(step2?.consecutiveCorrect).toBe(2);
+
+      // 3. An incorrect answer demotes back to Box 1
+      const step3 = LocalStorageService.updateMistakeSRS(mockQuestion.id, false);
+      expect(step3?.box).toBe(1);
+      expect(step3?.consecutiveCorrect).toBe(0);
+
+      // 4. Mark mastered directly sets Box 5
+      LocalStorageService.markMistakeMastered(mockQuestion.id);
+      const stats = LocalStorageService.getMistakeStats();
+      expect(stats.byBox[5]).toBe(1);
+      expect(stats.masteredCount).toBe(1);
+      expect(stats.dueCount).toBe(0);
+    });
+
+    it("saves and retrieves Target Exam configuration and tracks daily questions answered", () => {
+      const initialConfig = LocalStorageService.getTargetExamConfig();
+      expect(initialConfig.targetDate).toBeDefined();
+      expect(initialConfig.dailyGoal).toBe(25);
+
+      LocalStorageService.saveTargetExamConfig({
+        targetDate: "2027-03-21",
+        examName: "March 2027 CSE-PPT",
+        dailyGoal: 30,
+      });
+
+      const updated = LocalStorageService.getTargetExamConfig();
+      expect(updated.targetDate).toBe("2027-03-21");
+      expect(updated.examName).toBe("March 2027 CSE-PPT");
+      expect(updated.dailyGoal).toBe(30);
+
+      expect(LocalStorageService.getDailyQuestionsAnswered()).toBe(0);
+      LocalStorageService.addDailyQuestionsAnswered(10);
+      expect(LocalStorageService.getDailyQuestionsAnswered()).toBe(10);
+      LocalStorageService.addDailyQuestionsAnswered(15);
+      expect(LocalStorageService.getDailyQuestionsAnswered()).toBe(25);
+    });
+  });
 });
+
 

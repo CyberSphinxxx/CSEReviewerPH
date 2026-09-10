@@ -20,8 +20,11 @@ import {
   Sparkles,
   TrendingUp,
   Info,
+  Printer,
+  AlertCircle,
 } from "lucide-react";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
+import { QuestionReportModal } from "@/features/practice/QuestionReportModal";
 
 export interface AttemptData {
   id: string;
@@ -43,6 +46,7 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
   const [filter, setFilter] = useState<"all" | "incorrect" | "correct" | "flagged">("all");
   const [expandedQuestionIds, setExpandedQuestionIds] = useState<Set<string>>(new Set());
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+  const [reportingQuestion, setReportingQuestion] = useState<EngineQuestion | null>(null);
 
   // Load bookmarks via LocalStorageService
   useEffect(() => {
@@ -96,7 +100,7 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
     <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 animate-page-enter">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Navigation Breadcrumb / Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between print:hidden">
           <Link
             href="/"
             prefetch={true}
@@ -104,7 +108,28 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
           >
             &larr; Back to Home
           </Link>
-          <span className="text-xs text-slate-400">Attempt ID: {attemptData.id}</span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs shadow-xs transition"
+              id="print-scorecard-btn"
+            >
+              <Printer className="w-3.5 h-3.5 text-slate-600" />
+              <span>Print Scorecard (PDF)</span>
+            </button>
+            <span className="text-xs text-slate-400">Attempt ID: {attemptData.id}</span>
+          </div>
+        </div>
+
+        {/* Print-Only Official Diagnostic Header */}
+        <div className="hidden print:block border-b-2 border-slate-900 pb-4">
+          <div className="text-xl font-black text-slate-900">PHILIPPINE CIVIL SERVICE EXAM REVIEWER</div>
+          <div className="text-sm font-bold text-slate-700">Diagnostic Performance Scorecard & Competency Report</div>
+          <div className="text-xs text-slate-500 mt-2 flex items-center justify-between">
+            <span>Exam: {title} ({mode.toUpperCase()})</span>
+            <span>Date Completed: {new Date(attemptData.completedAt).toLocaleDateString("en-PH", { dateStyle: "long" })}</span>
+          </div>
         </div>
 
         {/* Hero Score Banner */}
@@ -283,8 +308,8 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
         )}
 
         {/* Action Buttons */}
-        <div className="flex flex-wrap gap-4 justify-between items-center pt-2">
-          <div className="flex gap-3">
+        <div className="flex flex-wrap gap-4 justify-between items-center pt-2 print:hidden">
+          <div className="flex flex-wrap gap-3">
             <Link
               href={`/exams/professional/${mode}`}
               prefetch={true}
@@ -293,6 +318,14 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
               <RotateCcw className="w-4 h-4" />
               <span>Retake {title}</span>
             </Link>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-300 bg-white font-bold text-slate-700 hover:bg-slate-50 text-sm shadow-sm transition"
+            >
+              <Printer className="w-4 h-4 text-slate-600" />
+              <span>Print Diagnostic Scorecard</span>
+            </button>
             <Link
               href="/dashboard"
               prefetch={true}
@@ -382,7 +415,17 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 print:hidden">
+                      {/* Report Question Button */}
+                      <button
+                        type="button"
+                        onClick={() => setReportingQuestion(q)}
+                        className="p-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-400 hover:text-amber-600 transition"
+                        title="Report an error or issue with this question"
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                      </button>
+
                       {/* Bookmark Button */}
                       <button
                         onClick={() => toggleBookmark(q)}
@@ -471,7 +514,27 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
           </div>
         </div>
 
-        <AdSenseBanner slotId="results-review-bottom" />
+        <div className="print:hidden">
+          <AdSenseBanner slotId="results-review-bottom" />
+        </div>
+
+        {/* Print Footer Disclaimer (CSC Rule Addendum §50) */}
+        <div className="hidden print:block pt-6 border-t border-slate-300 text-[10px] text-slate-500 leading-relaxed space-y-1">
+          <p className="font-bold text-slate-700">Official Civil Service Commission (CSC) Advisory Disclaimer:</p>
+          <p>
+            This diagnostic scorecard is provided as an independent preparation and diagnostic study aid by CSEReviewPH.com and does not constitute an official Civil Service rating released by the Civil Service Commission. In actual Civil Service Examination (CSE-PPT) administrations, final ratings are calculated through CSC statistical item-response equating.
+          </p>
+        </div>
+
+        {/* Report Question Modal */}
+        {reportingQuestion && (
+          <QuestionReportModal
+            isOpen={Boolean(reportingQuestion)}
+            onClose={() => setReportingQuestion(null)}
+            questionId={reportingQuestion.id}
+            questionText={reportingQuestion.questionText}
+          />
+        )}
       </div>
     </div>
   );

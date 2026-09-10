@@ -43,6 +43,7 @@ import {
 import { triggerHaptic } from "@/lib/haptics";
 import { useExamKeyboardShortcuts } from "./hooks/useExamKeyboardShortcuts";
 import { ExamScratchpad } from "./ExamScratchpad";
+import { QuestionReportModal } from "./QuestionReportModal";
 
 interface ExamRunnerProps {
   initialQuestions: EngineQuestion[];
@@ -154,6 +155,7 @@ export function ExamRunner({
 
   const [showNavigator, setShowNavigator] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isSubmittingRef = useRef(false);
   const sessionRef = useRef(session);
@@ -565,6 +567,17 @@ export function ExamRunner({
                     <span>{currentAnswer?.isFlagged ? "Flagged" : "Flag"}</span>
                   </button>
                 )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowReportModal(true)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 transition"
+                  id="report-question-btn"
+                  title="Report an error or issue with this question"
+                >
+                  <AlertCircle className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="hidden sm:inline">Report</span>
+                </button>
               </div>
             </div>
 
@@ -617,11 +630,13 @@ export function ExamRunner({
                 return (
                   <div
                     key={choice.id}
+                    data-testid={`choice-card-${choice.choiceLabel}`}
                     onContextMenu={(e) => handleToggleEliminate(choice.id, e)}
                     className={`w-full text-left p-3.5 sm:p-4 rounded-xl border-2 transition-all flex items-center justify-between gap-3 ${choiceCardClasses}`}
                   >
                     <button
                       type="button"
+                      data-testid={`choice-option-${choice.choiceLabel}`}
                       disabled={isEliminated}
                       onClick={() => {
                         if (isEliminated) return;
@@ -886,6 +901,16 @@ export function ExamRunner({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Question Error / Typo Reporting Modal */}
+      {currentQuestion && (
+        <QuestionReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          questionId={currentQuestion.id}
+          questionText={currentQuestion.questionText}
+        />
       )}
     </div>
   );

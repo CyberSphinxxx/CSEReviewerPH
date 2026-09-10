@@ -2,9 +2,9 @@
 
 *Handoff & status log for autonomous unattended operation per AGENTS.md §9.*
 
-## 🎉 Status: Core Platform & Phase 1 Enhancements Complete & Verified
+## 🎉 Status: Core Platform, Phase 1 & Phase 2 Enhancements Complete & Verified
 
-All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE Implementation)**, **Phase 3 (User Experience & Audit)**, and **Enhancement Phase 1 (Advanced Testing Experience & Runner UX)** have been completed, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` exit code 0).
+All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE Implementation)**, **Phase 3 (User Experience & Audit)**, **Enhancement Phase 1 (Testing Experience & Runner UX)**, and **Enhancement Phase 2 (Pedagogy, Analytics & Spaced Repetition)** have been completed, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` exit code 0).
 
 ---
 
@@ -12,9 +12,9 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **`npm run check:architecture`**: ✅ **PASSED** (Strictly zero hardcoded exam-slug branching inside `src/features/exam-engine/`).
 - **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with 0 errors).
 - **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
-- **`npm run test`**: ✅ **PASSED** (124 unit & real PostgreSQL integration tests across 23 test suites passing).
+- **`npm run test`**: ✅ **PASSED** (134 unit & real PostgreSQL integration tests across 25 test suites passing).
 - **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 30 routes compiled and prerendered).
-- **`npm run test:e2e`**: ✅ **PASSED** (6 Playwright end-to-end browser test suites passing: Landing page, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, guest localStorage draft auto-save & reload resumption, and keyboard shortcuts/choice eliminator/virtual scratchpad).
+- **`npm run test:e2e`**: ✅ **PASSED** (7 Playwright end-to-end browser test suites passing: Landing page, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, guest localStorage draft auto-save & reload resumption, keyboard shortcuts/choice eliminator/virtual scratchpad, and dashboard target countdown & Leitner SRS mistake bank).
 
 ---
 
@@ -190,6 +190,35 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **Next.js Streaming Skeleton (`loading.tsx`)**: Global App Router loading state with pulse animation preventing blank/white flashes during route transitions.
 - **Error Boundaries & 404 Resilience**: Created custom branded `not-found.tsx` and `error.tsx` with instant recovery actions.
 - **Resource Hints & Page Entry Animations**: Added `preconnect` and `dns-prefetch` for external assets, `scroll-behavior: smooth`, and `.animate-page-enter` CSS transitions.
+
+---
+
+## 🧠 Enhancement Phase 2: Pedagogy, Analytics & Spaced Repetition (SRS)
+
+### 1. Leitner Spaced Repetition System (SRS) for Mistake Bank
+- **Leitner Boxes & Intervals**: Structured 5-stage spaced intervals (Box 1: Daily, Box 2: 3-Day, Box 3: Weekly, Box 4: 14-Day, Box 5: Mastered/Monthly).
+- **Dynamic Progression**: Answering correctly during focused mistake drills promotes questions to higher boxes; incorrect responses automatically demote items to Box 1 for immediate review.
+- **Due Item Queries**: Real-time filtering in `LocalStorageService.getDueMistakes()` surfaces questions needing refresh without overwhelming learners.
+- **Mistake Bank UI Overhaul (`/dashboard/mistakes`)**:
+  - Interactive Leitner box distribution summary bar displaying question count per stage.
+  - Filter chips: `All Missed`, `Due for Review`, `High Priority (Box 1-2)`, and `Mastered`.
+  - One-click targeted drill launchers: "Review Due Items" and "Practice All".
+  - Choice inspection cards with strikethrough distractor display and full pedagogical rationale.
+
+### 2. In-Exam & Results Question Error Reporting
+- **Database Schema**: Leverages `question_reports` table in PostgreSQL with relations to questions.
+- **API Endpoint (`/api/questions/report`)**: Validates `questionId`, `reason` enum (`factual_error`, `typo`, `bad_explanation`, `formatting`, `other`), and user context comments (up to 1,000 characters). Automatically connects to PostgreSQL if configured, or queues gracefully with offline fallback.
+- **`QuestionReportModal` Component**: Non-disruptive accessible dialog accessible during live test taking (`ExamRunner.tsx`) and in post-test answer review (`ResultsView.tsx`).
+
+### 3. Target Exam Date Countdown & Daily Pacing
+- **Countdown Engine**: Tracks days and weeks remaining until upcoming CSE-PPT examination cycles (e.g. March 21, 2027 Cycle 1 and August 8, 2027 Cycle 2, or custom examinee target date).
+- **Daily Question Pacing Goal**: Persisted in `LocalStorageService.getTargetExamConfig()` with daily questions answered counter and dynamic progress bar.
+- **Interactive Dashboard Card**: Visual gauge displaying questions completed today vs daily goal with celebratory pacing feedback.
+
+### 4. Printable Diagnostic Scorecard & PDF Export
+- **Print Optimization (`ResultsView.tsx`)**: `@media print` styling formats a clean diagnostic certificate. Hides screen navigation, retake buttons, filters, bookmarks, and ads.
+- **Official Disclaimers**: Incorporates official Civil Service Commission (CSC) advisory note per Addendum §50, explaining statistical item-response equating.
+- **One-Click Action**: "Print Scorecard (PDF)" buttons in header and bottom toolbar triggering native browser print/save-as-PDF dialog.
 
 ---
 

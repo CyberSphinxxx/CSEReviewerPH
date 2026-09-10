@@ -8,6 +8,7 @@ import type {
   StoredMistakeItem,
   StudyStreakData,
   SubjectReadinessMetric,
+  TargetExamConfig,
 } from "./types";
 
 // Storage Key Constants
@@ -18,11 +19,27 @@ export const STORAGE_KEYS = {
   BOOKMARKS: "cse_guest_bookmarks",
   STREAK: "cse_guest_streak",
   DRAFT_PREFIX: "cse_guest_draft_",
+  TARGET_EXAM: "cse_guest_target_exam",
+  DAILY_ACTIVITY_PREFIX: "cse_guest_daily_activity_",
   LEGACY_HISTORY: "attempts_history",
   LEGACY_MISTAKES: "mistake_bank",
   LEGACY_BOOKMARKS: "bookmarked_question_ids",
   LEGACY_ATTEMPT_PREFIX: "attempt_",
 } as const;
+
+export const LEITNER_INTERVAL_DAYS: Record<1 | 2 | 3 | 4 | 5, number> = {
+  1: 1, // review daily
+  2: 3, // review every 3 days
+  3: 7, // review weekly
+  4: 14, // review every 2 weeks
+  5: 30, // mastered (monthly refresh)
+};
+
+export function calculateNextReviewDate(box: 1 | 2 | 3 | 4 | 5, fromDate = new Date()): string {
+  const days = LEITNER_INTERVAL_DAYS[box];
+  const next = new Date(fromDate.getTime() + days * 24 * 60 * 60 * 1000);
+  return next.toISOString();
+}
 
 function isBrowser(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -276,11 +293,16 @@ export class LocalStorageService {
       if (!isCorrect) {
         const existing = mistakeMap.get(q.id);
         if (existing) {
+          // Demote to Box 1, reset streak, due immediately
           mistakeMap.set(q.id, {
             ...existing,
             attemptId: attempt.id,
             selectedChoiceId: ans?.selectedChoiceId,
             reviewCount: existing.reviewCount + 1,
+            box: 1,
+            consecutiveCorrect: 0,
+            lastReviewedAt: attempt.completedAt,
+            nextReviewDue: calculateNextReviewDate(1, new Date(attempt.completedAt)),
           });
         } else {
           mistakeMap.set(q.id, {
@@ -291,6 +313,26 @@ export class LocalStorageService {
             correctChoiceId: correctChoice?.id,
             addedAt: attempt.completedAt,
             reviewCount: 1,
+            box: 1,
+            consecutiveCorrect: 0,
+            lastReviewedAt: attempt.completedAt,
+            nextReviewDue: new Date(attempt.completedAt).toISOString(), // immediately due
+          });
+        }
+      } else if (attempt.mode === "mistakes") {
+        // Correct answer during a mistake review drill advances Leitner box
+        const existing = mistakeMap.get(q.id);
+        if (existing) {
+          const currentBox = existing.box || 1;
+          const nextBox = Math.min(5, currentBox + 1) as 1 | 2 | 3 | 4 | 5;
+          const consecutive = (existing.consecutiveCorrect || 0) + 1;
+          mistakeMap.set(q.id, {
+            ...existing,
+            box: nextBox,
+            consecutiveCorrect: consecutive,
+            reviewCount: existing.reviewCount + 1,
+            lastReviewedAt: attempt.completedAt,
+            nextReviewDue: calculateNextReviewDate(nextBox, new Date(attempt.completedAt)),
           });
         }
       }
@@ -298,7 +340,8 @@ export class LocalStorageService {
 
     safeSetItem(STORAGE_KEYS.MISTAKES, Array.from(mistakeMap.values()));
 
-    // 4. Update Study Streak
+    // 4. Update Study Streak & Daily Questions Count
+    this.addDailyQuestionsAnswered(attempt.answers.length);
     this.recordDailyActivity();
 
     // 5. Clean up active draft for this exam if one exists
@@ -334,6 +377,115 @@ export class LocalStorageService {
   public static clearMistakeBank(): void {
     safeSetItem(STORAGE_KEYS.MISTAKES, []);
     safeRemoveItem(STORAGE_KEYS.LEGACY_MISTAKES);
+  }
+
+  /**
+   * Returns mistake items that are currently due for spaced repetition review
+   * (items in Box 1-4 whose nextReviewDue is now or in the past).
+   */
+  public static getDueMistakes(): StoredMistakeItem[] {
+    const all = this.getMistakeBank();
+    const now = Date.now();
+    return all.filter((m) => {
+      const box = m.box || 1;
+      if (box >= 5) return false; // Box 5 is mastered
+      if (!m.nextReviewDue) return true; // Legacy items without date are due immediately
+      return new Date(m.nextReviewDue).getTime() <= now;
+    });
+  }
+
+  /**
+   * Updates an item's Leitner box after a flashcard or drill response.
+   */
+  public static updateMistakeSRS(
+    questionId: string,
+    isCorrect: boolean
+  ): StoredMistakeItem | null {
+    const all = this.getMistakeBank();
+    const idx = all.findIndex((m) => m.id === questionId);
+    if (idx === -1) return null;
+
+    const item = all[idx];
+    const now = new Date();
+    let updatedItem: StoredMistakeItem;
+
+    if (isCorrect) {
+      const currentBox = item.box || 1;
+      const nextBox = Math.min(5, currentBox + 1) as 1 | 2 | 3 | 4 | 5;
+      const consecutive = (item.consecutiveCorrect || 0) + 1;
+      updatedItem = {
+        ...item,
+        box: nextBox,
+        consecutiveCorrect: consecutive,
+        reviewCount: item.reviewCount + 1,
+        lastReviewedAt: now.toISOString(),
+        nextReviewDue: calculateNextReviewDate(nextBox, now),
+      };
+    } else {
+      updatedItem = {
+        ...item,
+        box: 1,
+        consecutiveCorrect: 0,
+        reviewCount: item.reviewCount + 1,
+        lastReviewedAt: now.toISOString(),
+        nextReviewDue: calculateNextReviewDate(1, now),
+      };
+    }
+
+    all[idx] = updatedItem;
+    safeSetItem(STORAGE_KEYS.MISTAKES, all);
+    return updatedItem;
+  }
+
+  /**
+   * Directly marks a mistake item as Mastered (Leitner Box 5).
+   */
+  public static markMistakeMastered(questionId: string): void {
+    const all = this.getMistakeBank();
+    const idx = all.findIndex((m) => m.id === questionId);
+    if (idx === -1) return;
+
+    all[idx] = {
+      ...all[idx],
+      box: 5,
+      consecutiveCorrect: (all[idx].consecutiveCorrect || 0) + 1,
+      lastReviewedAt: new Date().toISOString(),
+      nextReviewDue: calculateNextReviewDate(5, new Date()),
+    };
+    safeSetItem(STORAGE_KEYS.MISTAKES, all);
+  }
+
+  /**
+   * Retrieves summary counts by Leitner box for visual progress indicators.
+   */
+  public static getMistakeStats(): {
+    total: number;
+    dueCount: number;
+    masteredCount: number;
+    byBox: Record<1 | 2 | 3 | 4 | 5, number>;
+  } {
+    const all = this.getMistakeBank();
+    const now = Date.now();
+    const byBox: Record<1 | 2 | 3 | 4 | 5, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    let dueCount = 0;
+    let masteredCount = 0;
+
+    for (const m of all) {
+      const box = (m.box || 1) as 1 | 2 | 3 | 4 | 5;
+      byBox[box] = (byBox[box] || 0) + 1;
+      if (box === 5) {
+        masteredCount++;
+      } else if (!m.nextReviewDue || new Date(m.nextReviewDue).getTime() <= now) {
+        dueCount++;
+      }
+    }
+
+    return {
+      total: all.length,
+      dueCount,
+      masteredCount,
+      byBox,
+    };
   }
 
   /* -------------------------------------------------------------------------- */
@@ -420,6 +572,29 @@ export class LocalStorageService {
 
     safeSetItem(STORAGE_KEYS.STREAK, updated);
     return updated;
+  }
+
+  public static getDailyQuestionsAnswered(date = getTodayString()): number {
+    return safeGetItem<number>(`${STORAGE_KEYS.DAILY_ACTIVITY_PREFIX}${date}`, 0);
+  }
+
+  public static addDailyQuestionsAnswered(count: number, date = getTodayString()): number {
+    const current = this.getDailyQuestionsAnswered(date);
+    const updated = current + count;
+    safeSetItem(`${STORAGE_KEYS.DAILY_ACTIVITY_PREFIX}${date}`, updated);
+    return updated;
+  }
+
+  public static getTargetExamConfig(): TargetExamConfig {
+    return safeGetItem<TargetExamConfig>(STORAGE_KEYS.TARGET_EXAM, {
+      targetDate: "2027-03-21",
+      examName: "March 2027 CSE-PPT",
+      dailyGoal: 25,
+    });
+  }
+
+  public static saveTargetExamConfig(config: TargetExamConfig): void {
+    safeSetItem(STORAGE_KEYS.TARGET_EXAM, config);
   }
 
   /* -------------------------------------------------------------------------- */

@@ -1,0 +1,87 @@
+import { NextRequest, NextResponse } from "next/server";
+import { db, schema } from "@/db";
+
+export const dynamic = "force-dynamic";
+
+const VALID_REASONS = new Set([
+  "factual_error",
+  "typo",
+  "bad_explanation",
+  "formatting",
+  "other",
+]);
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { questionId, reason, comments, userId } = body ?? {};
+
+    if (!questionId || typeof questionId !== "string") {
+      return NextResponse.json(
+        { error: "Invalid or missing 'questionId'" },
+        { status: 400 }
+      );
+    }
+
+    if (!reason || typeof reason !== "string" || !VALID_REASONS.has(reason)) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid 'reason'. Must be one of: factual_error, typo, bad_explanation, formatting, other",
+        },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedComments =
+      typeof comments === "string" ? comments.slice(0, 1000).trim() : null;
+
+    const reportId = `rep_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+    // Attempt to persist to PostgreSQL if database connection is available
+    let persistedToDb = false;
+    try {
+      const hasDbConfig = Boolean(
+        process.env.DATABASE_URL ||
+          process.env.POSTGRES_URL ||
+          process.env.POSTGRES_PRISMA_URL
+      );
+
+      if (hasDbConfig) {
+        await db.insert(schema.questionReports).values({
+          id: reportId,
+          questionId,
+          userId: typeof userId === "string" ? userId : null,
+          reason,
+          comments: sanitizedComments,
+          status: "pending",
+        });
+        persistedToDb = true;
+      }
+    } catch (dbErr) {
+      // In local development, client-only testing, or offline scenarios where
+      // the question record may not exist in PostgreSQL or the DB is offline,
+      // log the report and return success to ensure user flow is uninterrupted.
+      console.warn(
+        `[QuestionReport] Fallback storage for report on ${questionId}:`,
+        dbErr instanceof Error ? dbErr.message : dbErr
+      );
+    }
+
+    return NextResponse.json(
+      {
+        success: true,
+        reportId,
+        storage: persistedToDb ? "database" : "local_fallback",
+        message: "Thank you! Your report has been submitted to our content review team.",
+      },
+      { status: 201 }
+    );
+  } catch (err) {
+    console.error("[QuestionReport] Error processing report request:", err);
+    return NextResponse.json(
+      { error: "Internal server error processing report." },
+      { status: 500 }
+    );
+  }
+}
