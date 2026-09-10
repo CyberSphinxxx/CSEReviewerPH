@@ -21,7 +21,7 @@ Under **Project Settings > Environment Variables**, configure the following:
 | Variable | Environment | Description |
 | :--- | :--- | :--- |
 | `DATABASE_URL` or `POSTGRES_URL` | Production, Preview | PostgreSQL connection URI with SSL enabled (e.g. Neon, Supabase, Vercel Postgres) |
-| `NEXT_PUBLIC_APP_URL` | Production | Canonical production domain (e.g. `https://csereviewer.ph`). *Preview deployments automatically fallback to `https://${VERCEL_URL}`.* |
+| `NEXT_PUBLIC_APP_URL` | Production | Canonical production domain (e.g. `https://csereviewph.com`). *Preview deployments automatically fallback to `https://${VERCEL_URL}`.* |
 | `BETTER_AUTH_SECRET` | Production, Preview | 32+ character random secret string |
 | `BETTER_AUTH_URL` | Production | Canonical auth callback domain (optional if `NEXT_PUBLIC_APP_URL` is configured) |
 | `DB_POOL_MAX` | Production, Preview | Maximum pool connections per serverless lambda instance (defaults to `5`) |
