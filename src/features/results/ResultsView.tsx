@@ -21,6 +21,7 @@ import {
   TrendingUp,
   Info,
 } from "lucide-react";
+import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 
 export interface AttemptData {
   id: string;
@@ -92,12 +93,13 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8 animate-page-enter">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Navigation Breadcrumb / Header */}
         <div className="flex items-center justify-between">
           <Link
             href="/"
+            prefetch={true}
             className="text-sm font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1"
           >
             &larr; Back to Home
@@ -268,6 +270,7 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
                   </div>
                   <Link
                     href={`/practice/${rec.topicId}`}
+                    prefetch={true}
                     className="mt-4 inline-flex items-center text-xs font-bold text-brand-700 hover:text-brand-800"
                   >
                     <span>Practice Topic</span>
@@ -284,6 +287,7 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
           <div className="flex gap-3">
             <Link
               href={`/exams/professional/${mode}`}
+              prefetch={true}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-sm shadow transition"
             >
               <RotateCcw className="w-4 h-4" />
@@ -291,6 +295,7 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
             </Link>
             <Link
               href="/dashboard"
+              prefetch={true}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-slate-300 font-bold text-slate-700 hover:bg-slate-50 text-sm shadow-sm transition"
             >
               View Dashboard
@@ -465,6 +470,8 @@ export function ResultsView({ attemptData }: ResultsViewProps) {
             })}
           </div>
         </div>
+
+        <AdSenseBanner slotId="results-review-bottom" />
       </div>
     </div>
   );
