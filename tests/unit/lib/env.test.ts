@@ -24,14 +24,14 @@ describe("Environment & URL Resolution Helpers", () => {
   });
 
   it("prioritizes NEXT_PUBLIC_APP_URL when present", () => {
-    process.env.NEXT_PUBLIC_APP_URL = "https://csereviewer.ph/";
+    process.env.NEXT_PUBLIC_APP_URL = "https://csereviewph.com/";
     process.env.VERCEL_URL = "preview-abc.vercel.app";
-    expect(getBaseUrl()).toBe("https://csereviewer.ph");
+    expect(getBaseUrl()).toBe("https://csereviewph.com");
   });
 
   it("resolves BETTER_AUTH_URL if NEXT_PUBLIC_APP_URL is not set", () => {
-    process.env.BETTER_AUTH_URL = "https://auth.csereviewer.ph/";
-    expect(getBaseUrl()).toBe("https://auth.csereviewer.ph");
+    process.env.BETTER_AUTH_URL = "https://auth.csereviewph.com/";
+    expect(getBaseUrl()).toBe("https://auth.csereviewph.com");
   });
 
   it("resolves VERCEL_PROJECT_PRODUCTION_URL when present", () => {
