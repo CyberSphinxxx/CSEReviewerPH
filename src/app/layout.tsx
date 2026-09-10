@@ -4,6 +4,7 @@ import { getBaseUrl } from "@/lib/env";
 import { CookieConsentBanner } from "@/components/privacy/CookieConsentBanner";
 import { AdSenseScript } from "@/components/ads/AdSenseScript";
 import { NavigationProgress } from "@/components/layout/NavigationProgress";
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 
 const baseUrl = getBaseUrl();
 const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
@@ -109,6 +110,7 @@ export default function RootLayout({
         {children}
         <CookieConsentBanner />
         <AdSenseScript />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
