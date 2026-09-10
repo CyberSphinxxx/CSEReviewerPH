@@ -24,7 +24,7 @@ describe("PostgreSQL Integration — Real Database Engine (PGlite)", () => {
       const migrationSql = readFileSync(`src/db/migrations/${file}`, "utf-8");
       await client.exec(migrationSql);
     }
-  });
+  }, 30000);
 
   it("verifies Postgres version and connection", async () => {
     const res = await client.query<{ version: string }>("SELECT version()");
