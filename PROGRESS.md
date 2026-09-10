@@ -2,9 +2,9 @@
 
 *Handoff & status log for autonomous unattended operation per AGENTS.md §9.*
 
-## 🎉 MVP Status: Phases 0–3 Complete & Verified
+## 🎉 Status: Core Platform & Phase 1 Enhancements Complete & Verified
 
-All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE Implementation)**, and **Phase 3 (User Experience)** have been completed, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` exit code 0).
+All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE Implementation)**, **Phase 3 (User Experience & Audit)**, and **Enhancement Phase 1 (Advanced Testing Experience & Runner UX)** have been completed, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` exit code 0).
 
 ---
 
@@ -12,9 +12,9 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **`npm run check:architecture`**: ✅ **PASSED** (Strictly zero hardcoded exam-slug branching inside `src/features/exam-engine/`).
 - **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with 0 errors).
 - **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
-- **`npm run test`**: ✅ **PASSED** (82 unit & real PostgreSQL integration tests across 16 test suites passing).
-- **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 10 routes compiled and prerendered, including `/api/health`).
-- **`npm run test:e2e`**: ✅ **PASSED** (5 Playwright end-to-end browser test suites passing: Landing page, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, and guest localStorage draft auto-save & reload resumption).
+- **`npm run test`**: ✅ **PASSED** (124 unit & real PostgreSQL integration tests across 23 test suites passing).
+- **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 30 routes compiled and prerendered).
+- **`npm run test:e2e`**: ✅ **PASSED** (6 Playwright end-to-end browser test suites passing: Landing page, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, guest localStorage draft auto-save & reload resumption, and keyboard shortcuts/choice eliminator/virtual scratchpad).
 
 ---
 

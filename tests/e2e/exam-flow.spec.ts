@@ -137,4 +137,43 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
     await page.goto("/dashboard/bookmarks");
     await expect(page.getByRole("button", { name: /Practice Bookmarks/i })).toBeVisible();
   });
+
+  test("supports keyboard shortcuts, choice elimination, and virtual scratchpad in exam runner", async ({ page }) => {
+    await page.goto("/exams/professional/quick");
+
+    await expect(page.locator("#exam-timer")).toBeVisible();
+    await expect(page.getByText(/Question 1 of 10/i)).toBeVisible();
+
+    // Press 'A' key to select choice A on Q1
+    await page.keyboard.press("a");
+    const choiceACard = page.locator("button:has(span.rounded-lg:text('A'))").first().locator("..");
+    await expect(choiceACard).toHaveClass(/border-brand-600/);
+
+    // Press 'F' key to flag question
+    await page.keyboard.press("f");
+    await expect(page.locator("#flag-question-button")).toContainText(/Flagged/i);
+
+    // Press 'ArrowRight' to navigate to Question 2
+    await page.keyboard.press("ArrowRight");
+    await expect(page.getByText(/Question 2 of 10/i)).toBeVisible();
+
+    // Cross-out (eliminate) Option B on Question 2
+    const eliminateBtn = page.getByRole("button", { name: /Cross-out Option B/i }).first();
+    await eliminateBtn.click();
+    await expect(page.getByRole("button", { name: /Restore Option B/i })).toBeVisible();
+
+    // Open Virtual Scratchpad via button
+    await page.getByRole("button", { name: /Scratchpad/i }).first().click();
+    await expect(page.getByText(/Scratchpad & Arithmetic Canvas/i)).toBeVisible();
+
+    // Switch to Type Notes tab and enter calculation
+    await page.getByRole("button", { name: /Type Notes/i }).click();
+    const notesInput = page.getByPlaceholder(/Type calculations or thoughts here/i);
+    await notesInput.fill("120 * 0.8 = 96");
+    await expect(notesInput).toHaveValue("120 * 0.8 = 96");
+
+    // Close scratchpad
+    await page.getByRole("button", { name: /Keep Working/i }).click();
+    await expect(page.getByText(/Scratchpad & Arithmetic Canvas/i)).not.toBeVisible();
+  });
 });

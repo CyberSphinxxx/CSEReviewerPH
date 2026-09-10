@@ -220,5 +220,97 @@ describe("ExamRunner Component", () => {
     expect(screen.queryByText(/Unfinished Session Found/i)).not.toBeInTheDocument();
     expect(LocalStorageService.getActiveDraft("professional", "quick")).toBeNull();
   });
+
+  it("selects choice and flags question via keyboard shortcuts", () => {
+    render(
+      <ExamRunner
+        initialQuestions={mockQuestions}
+        rules={mockRules}
+        title="Diagnostic Quick Test"
+      />
+    );
+
+    // Press 'A' key to select choice A (Alpha Choice)
+    fireEvent.keyDown(window, { key: "a" });
+    expect(screen.getByText("Alpha Choice").closest("div")).toHaveClass("border-brand-600");
+
+    // Press 'F' key to toggle flag
+    fireEvent.keyDown(window, { key: "f" });
+    expect(screen.getByRole("button", { name: /flag/i })).toHaveTextContent("Flagged");
+
+    // Press 'ArrowRight' to move to next question
+    fireEvent.keyDown(window, { key: "ArrowRight" });
+    expect(screen.getByText("Sample Question 2 text")).toBeInTheDocument();
+  });
+
+  it("supports striking through and eliminating distractors", () => {
+    render(
+      <ExamRunner
+        initialQuestions={mockQuestions}
+        rules={mockRules}
+        title="Diagnostic Quick Test"
+      />
+    );
+
+    // Eliminate Option B
+    const eliminateBtn = screen.getByRole("button", { name: /Cross-out Option B/i });
+    fireEvent.click(eliminateBtn);
+
+    // Beta choice should now have line-through text and restore button
+    expect(screen.getByText("Beta Choice")).toHaveClass("line-through");
+    expect(screen.getByRole("button", { name: /Restore Option B/i })).toBeInTheDocument();
+
+    // Clicking the eliminated button does not select it
+    fireEvent.click(screen.getByText("Beta Choice"));
+    expect(screen.getByText("Beta Choice").closest("div")).not.toHaveClass("border-brand-600");
+  });
+
+  it("renders instant feedback and concept explanation in practice mode", () => {
+    const practiceRules: ExamRuleConfig = {
+      ...mockRules,
+      mode: "practice",
+    };
+
+    render(
+      <ExamRunner
+        initialQuestions={mockQuestions}
+        rules={practiceRules}
+        title="Topic Practice"
+      />
+    );
+
+    // Select correct choice A
+    fireEvent.click(screen.getByText("Alpha Choice"));
+
+    // Verify instant feedback card appears with rationale
+    expect(screen.getByText(/Correct! Option A is right/i)).toBeInTheDocument();
+    expect(screen.getByText("Educational explanation for question 1")).toBeInTheDocument();
+  });
+
+  it("opens and interacts with the virtual arithmetic scratchpad", () => {
+    render(
+      <ExamRunner
+        initialQuestions={mockQuestions}
+        rules={mockRules}
+        title="Numerical Drill"
+      />
+    );
+
+    // Click scratchpad button
+    fireEvent.click(screen.getByRole("button", { name: /scratchpad/i }));
+
+    // Verify scratchpad modal is visible
+    expect(screen.getByText(/Scratchpad & Arithmetic Canvas/i)).toBeInTheDocument();
+
+    // Switch to type notes
+    fireEvent.click(screen.getByRole("button", { name: /type notes/i }));
+    const textarea = screen.getByPlaceholderText(/type calculations or thoughts here/i);
+    fireEvent.change(textarea, { target: { value: "170 * 0.8 = 136" } });
+    expect(textarea).toHaveValue("170 * 0.8 = 136");
+
+    // Close scratchpad
+    fireEvent.click(screen.getByRole("button", { name: /keep working/i }));
+    expect(screen.queryByText(/Scratchpad & Arithmetic Canvas/i)).not.toBeInTheDocument();
+  });
 });
 
