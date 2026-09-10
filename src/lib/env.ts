@@ -29,7 +29,12 @@ export function getBaseUrl(): string {
     return `https://${process.env.VERCEL_URL.replace(/\/+$/, "")}`;
   }
 
-  // 6. Local development fallback
+  // 6. Production fallback if no domain env is provided
+  if (process.env.NODE_ENV === "production") {
+    return "https://csereviewph.com";
+  }
+
+  // 7. Local development fallback
   return "http://localhost:3000";
 }
 
