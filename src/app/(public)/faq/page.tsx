@@ -6,7 +6,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 import { FAQS } from "@/lib/content";
-import { HelpCircle, ChevronDown, ChevronUp, Search, ArrowRight } from "lucide-react";
+import { ChevronDown, ChevronUp, Search, ArrowRight, CheckCircle2 } from "lucide-react";
 
 export default function FAQPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -57,17 +57,16 @@ export default function FAQPage() {
 
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8 animate-page-enter">
         <div className="max-w-4xl mx-auto space-y-10">
-          {/* Header Banner */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold">
-              <HelpCircle className="w-3.5 h-3.5 text-brand-600" />
-              <span>Everything You Need to Know</span>
-            </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          {/* Header */}
+          <div className="space-y-2 border-b border-slate-200/80 pb-6">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Official Examination Guidance
+            </span>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
               Civil Service Exam Frequently Asked Questions
             </h1>
-            <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
-              Clear, verified answers to common questions about CSE eligibility requirements, passing grades, exam day rules, and preparation strategies.
+            <p className="text-sm sm:text-base text-slate-600 max-w-2xl leading-relaxed">
+              Verified answers to common questions on CSE eligibility requirements, the 80% passing standard, exam day guidelines, and pacing methods.
             </p>
           </div>
 
@@ -80,7 +79,7 @@ export default function FAQPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search FAQ by keyword (e.g. passing grade, calculator, valid ID, retake)..."
-                className="w-full text-sm pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+                className="w-full text-sm pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 bg-white shadow-xs focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900 transition"
               />
             </div>
 
@@ -90,10 +89,10 @@ export default function FAQPage() {
                   key={cat}
                   type="button"
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition ${
                     selectedCategory === cat
-                      ? "bg-brand-700 text-white shadow-sm"
-                      : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-100"
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
                   }`}
                 >
                   {cat}
@@ -110,7 +109,7 @@ export default function FAQPage() {
                 return (
                   <div
                     key={faq.id}
-                    className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm transition"
+                    className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs transition"
                   >
                     <button
                       type="button"
@@ -119,16 +118,16 @@ export default function FAQPage() {
                       aria-expanded={isOpen}
                     >
                       <div>
-                        <span className="text-[10px] uppercase font-bold tracking-wider text-brand-600 block mb-1">
+                        <span className="text-[11px] uppercase font-bold tracking-wider text-slate-500 block mb-1">
                           {faq.category}
                         </span>
-                        <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
+                        <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
                           {faq.question}
-                        </h3>
+                        </h2>
                       </div>
                       <div className="text-slate-400 shrink-0">
                         {isOpen ? (
-                          <ChevronUp className="w-5 h-5 text-brand-600" />
+                          <ChevronUp className="w-5 h-5 text-slate-900" />
                         ) : (
                           <ChevronDown className="w-5 h-5" />
                         )}
@@ -136,8 +135,26 @@ export default function FAQPage() {
                     </button>
 
                     {isOpen && (
-                      <div className="px-4 pb-5 sm:px-5 border-t border-slate-100 text-xs sm:text-sm text-slate-600 leading-relaxed pt-3">
-                        <p>{faq.answer}</p>
+                      <div className="px-4 pb-5 sm:px-5 border-t border-slate-100 pt-3 space-y-3">
+                        <div className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                          <p>{faq.answer}</p>
+                        </div>
+
+                        {/* Official Verification & Contextual Action Block */}
+                        <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center gap-1.5 text-emerald-700 font-medium text-[11px]">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Verified per official Civil Service Commission advisories</span>
+                          </div>
+
+                          <Link
+                            href="/exams/professional/quick"
+                            className="inline-flex items-center gap-1 text-slate-900 font-bold hover:text-brand-700 transition"
+                          >
+                            <span>Practice related questions</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -152,22 +169,21 @@ export default function FAQPage() {
             )}
           </div>
 
-          {/* AdSense Placement */}
           <AdSenseBanner slotId="faq-page-bottom" />
 
-          {/* CTA Box */}
-          <div className="bg-gradient-to-r from-brand-700 to-brand-900 rounded-2xl text-white p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-md">
+          {/* Bottom Action Card */}
+          <div className="bg-slate-900 rounded-2xl text-white p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-sm">
             <div className="space-y-1 text-center sm:text-left">
-              <h3 className="text-lg font-bold">Ready to test your readiness?</h3>
-              <p className="text-xs text-brand-100">
-                Put your knowledge into practice with our 100% original full mock exam.
+              <h2 className="text-lg font-bold">Ready to test your preparation?</h2>
+              <p className="text-xs text-slate-300">
+                Practice 10 random questions with instant answers and concept explanations.
               </p>
             </div>
             <Link
-              href="/exams/professional/full"
-              className="px-5 py-2.5 rounded-xl bg-white text-brand-900 text-xs font-bold hover:bg-brand-50 transition shadow-sm shrink-0 flex items-center gap-1.5"
+              href="/exams/professional/quick"
+              className="px-5 py-2.5 rounded-xl bg-white text-slate-950 text-xs font-bold hover:bg-slate-100 transition shadow-xs shrink-0 flex items-center gap-1.5"
             >
-              <span>Take Full Mock Exam</span>
+              <span>Take Free Diagnostic Drill</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
