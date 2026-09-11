@@ -2,9 +2,9 @@
 
 *Handoff & status log for autonomous unattended operation per AGENTS.md §9.*
 
-## 🎉 Status: Core Platform, Phase 1 & Phase 2 Enhancements Complete & Verified
+## 🎉 Status: All 4 Major Enhancement Phases Complete & Fully Verified
 
-All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE Implementation)**, **Phase 3 (User Experience & Audit)**, **Enhancement Phase 1 (Testing Experience & Runner UX)**, and **Enhancement Phase 2 (Pedagogy, Analytics & Spaced Repetition)** have been completed, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` exit code 0).
+All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE Implementation)**, **Phase 3 (User Experience & Audit)**, **Enhancement Phase 1 (Testing Experience & Runner UX)**, **Enhancement Phase 2 (Pedagogy, Analytics & Spaced Repetition)**, **Enhancement Phase 3 (PWA & Offline-First Support)**, and **Enhancement Phase 4 (Better Auth Cloud Sync & RA 10173 Privacy Controls)** have been completed, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` exit code 0).
 
 ---
 
@@ -12,8 +12,8 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **`npm run check:architecture`**: ✅ **PASSED** (Strictly zero hardcoded exam-slug branching inside `src/features/exam-engine/`).
 - **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with 0 errors).
 - **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
-- **`npm run test`**: ✅ **PASSED** (134 unit & real PostgreSQL integration tests across 25 test suites passing).
-- **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 30 routes compiled and prerendered).
+- **`npm run test`**: ✅ **PASSED** (156 unit & real PostgreSQL integration tests across 32 test suites passing).
+- **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 33 routes compiled and prerendered).
 - **`npm run test:e2e`**: ✅ **PASSED** (7 Playwright end-to-end browser test suites passing: Landing page, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, guest localStorage draft auto-save & reload resumption, keyboard shortcuts/choice eliminator/virtual scratchpad, and dashboard target countdown & Leitner SRS mistake bank).
 
 ---
@@ -219,6 +219,45 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **Print Optimization (`ResultsView.tsx`)**: `@media print` styling formats a clean diagnostic certificate. Hides screen navigation, retake buttons, filters, bookmarks, and ads.
 - **Official Disclaimers**: Incorporates official Civil Service Commission (CSC) advisory note per Addendum §50, explaining statistical item-response equating.
 - **One-Click Action**: "Print Scorecard (PDF)" buttons in header and bottom toolbar triggering native browser print/save-as-PDF dialog.
+
+---
+
+## 📱 Enhancement Phase 3: Progressive Web App (PWA) & Offline-First Reliability
+
+### 1. Web App Manifest (`src/app/manifest.ts`)
+- Configured native PWA metadata: `name: "csereviewph.com — Philippine Civil Service Exam Reviewer"`, `short_name: "CSEReviewer"`, `display: "standalone"`, `theme_color: "#1d4ed8"`, `background_color: "#f8fafc"`.
+- Added high-resolution PWA icons (`icon-192.png`, `icon-512.png`, `icon.svg`) and mobile categories (`education`, `productivity`, `reference`).
+
+### 2. Service Worker & Offline Caching (`public/sw.js`)
+- Static asset caching (`STATIC_CACHE_v1`): Pre-caches core styles, icons, fonts, and scripts for instant loading.
+- App shell & route navigation caching (`DYNAMIC_CACHE_v1`): Network-first strategy with cached offline fallbacks ensuring examinees can study seamlessly without continuous internet connectivity.
+
+### 3. Connectivity Banner & PWA Install Prompt (`src/components/pwa/ServiceWorkerRegister.tsx`)
+- Detects `online` and `offline` browser events with an accessible amber notification banner.
+- Captures native `beforeinstallprompt` event, presenting a non-intrusive "Install CSE Reviewer App" banner with "Install App" and "Dismiss" controls.
+
+---
+
+## ☁️ Enhancement Phase 4: Cloud Account Sync (Better Auth) & RA 10173 Privacy Controls
+
+### 1. Better Auth Engine & Next.js Integration
+- **Server Auth (`src/lib/auth/index.ts`)**: Configured Better Auth engine backed by PostgreSQL via Drizzle adapter, leveraging `users`, `sessions`, `accounts`, and `verifications` schema tables. Supports email/password authentication with bcrypt hashing.
+- **Client Hooks (`src/lib/auth/auth-client.ts`)**: Exported `signIn`, `signUp`, `signOut`, and `useSession` hooks.
+- **Dynamic Catch-all Route (`src/app/api/auth/[...all]/route.ts`)**: Mounted Better Auth Next.js API handler (`toNextJsHandler(auth)`).
+
+### 2. Cloud Data Migration & Sync Engine (`/api/user/sync`)
+- **Guest-First Policy**: Examinees practice freely as guests without forced account creation.
+- **Seamless Migration**: When signing up or logging in, `LocalStorageService.syncGuestDataToCloud()` pushes local test attempts, mistake items (with Leitner box levels), and bookmarks to the server.
+- **Session Verification**: Server validates active Better Auth session, parses sync payload, and persists records with relational foreign keys.
+
+### 3. RA 10173 (Data Privacy Act of 2012) Compliance Endpoints (`/api/user/account`)
+- **Right to Data Portability (`GET /api/user/account`)**: Authenticated endpoint returning full machine-readable JSON containing the user's account profile and cloud exam history.
+- **Right to Erasure (`DELETE /api/user/account`)**: Authenticated endpoint that permanently deletes the user's account record and cascades complete erasure across sessions, accounts, attempts, and answers.
+- **Data Privacy Disclosure**: Explicit Philippine RA 10173 advisory displayed in `AuthModal.tsx` and on the user dashboard.
+
+### 4. User Navigation & Dashboard Integration
+- **`UserNav.tsx`**: Header component showing "Sign In" modal button when unauthenticated; user avatar, name, sync status pill, "Export My Data (JSON)", and "Delete Account" dialog when logged in.
+- **`DashboardView.tsx`**: Prominent "Save to Cloud Account" sync card encouraging cross-device backup with automatic guest record migration.
 
 ---
 
