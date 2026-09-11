@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { signIn, signUp } from "@/lib/auth/auth-client";
 import { LocalStorageService } from "@/lib/storage";
 import {
@@ -22,6 +23,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -34,7 +36,11 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !mounted) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,10 +125,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const guestExamsCount = LocalStorageService.getAttemptHistory().length;
   const guestBookmarksCount = LocalStorageService.getBookmarks().length;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 relative overflow-hidden"
+        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 relative my-auto overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-modal-title"
@@ -341,6 +347,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

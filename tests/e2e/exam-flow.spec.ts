@@ -199,4 +199,25 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
     await expect(page.getByText("Leitner SRS")).toBeVisible();
     await expect(page.getByText("Your Mistake Bank is empty!")).toBeVisible();
   });
+
+  test("opens Sign In modal from header and confirms it is in-bounds and centered in viewport", async ({ page }) => {
+    await page.goto("/");
+    const signInBtn = page.getByRole("button", { name: "Sign In" });
+    await expect(signInBtn).toBeVisible();
+    await signInBtn.click();
+
+    // Verify modal appears and is visible
+    const modal = page.getByRole("dialog");
+    await expect(modal).toBeVisible();
+    await expect(page.getByText("Sign In to Sync Progress")).toBeVisible();
+
+    // Verify modal bounding box is well within viewport (top > 0)
+    const box = await modal.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.y).toBeGreaterThan(10);
+
+    // Close modal
+    await page.getByRole("button", { name: "Close dialog" }).click();
+    await expect(modal).not.toBeVisible();
+  });
 });
