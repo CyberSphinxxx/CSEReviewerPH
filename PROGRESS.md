@@ -2,9 +2,9 @@
 
 *Handoff & status log for autonomous unattended operation per AGENTS.md §9.*
 
-## 🎉 Status: All 4 Major Enhancement Phases Complete & Fully Verified
+## 🎉 Status: All Enhancement Phases & Homepage UI Redesign Complete & Fully Verified
 
-All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE Implementation)**, **Phase 3 (User Experience & Audit)**, **Enhancement Phase 1 (Testing Experience & Runner UX)**, **Enhancement Phase 2 (Pedagogy, Analytics & Spaced Repetition)**, **Enhancement Phase 3 (PWA & Offline-First Support)**, and **Enhancement Phase 4 (Better Auth Cloud Sync & RA 10173 Privacy Controls)** have been completed, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` exit code 0).
+All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE Implementation)**, **Phase 3 (User Experience & Audit)**, **Enhancement Phase 1 (Testing Experience & Runner UX)**, **Enhancement Phase 2 (Pedagogy, Analytics & Spaced Repetition)**, **Enhancement Phase 3 (PWA & Offline-First Support)**, **Enhancement Phase 4 (Better Auth Cloud Sync & RA 10173 Privacy Controls)**, and **Enhancement Phase 5 (Homepage UI Redesign & Interactive Product Showcase)** have been completed, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` exit code 0).
 
 ---
 
@@ -12,9 +12,9 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **`npm run check:architecture`**: ✅ **PASSED** (Strictly zero hardcoded exam-slug branching inside `src/features/exam-engine/`).
 - **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with 0 errors).
 - **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
-- **`npm run test`**: ✅ **PASSED** (156 unit & real PostgreSQL integration tests across 32 test suites passing).
+- **`npm run test`**: ✅ **PASSED** (163 unit & real PostgreSQL integration tests across 33 test suites passing).
 - **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 33 routes compiled and prerendered).
-- **`npm run test:e2e`**: ✅ **PASSED** (7 Playwright end-to-end browser test suites passing: Landing page, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, guest localStorage draft auto-save & reload resumption, keyboard shortcuts/choice eliminator/virtual scratchpad, and dashboard target countdown & Leitner SRS mistake bank).
+- **`npm run test:e2e`**: ✅ **PASSED** (7 Playwright end-to-end browser test suites passing: Landing page with interactive hero, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, guest localStorage draft auto-save & reload resumption, keyboard shortcuts/choice eliminator/virtual scratchpad, and dashboard target countdown & Leitner SRS mistake bank).
 
 ---
 
@@ -258,6 +258,31 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 ### 4. User Navigation & Dashboard Integration
 - **`UserNav.tsx`**: Header component showing "Sign In" modal button when unauthenticated; user avatar, name, sync status pill, "Export My Data (JSON)", and "Delete Account" dialog when logged in.
 - **`DashboardView.tsx`**: Prominent "Save to Cloud Account" sync card encouraging cross-device backup with automatic guest record migration.
+
+---
+
+## 🎨 Enhancement Phase 5: Homepage Redesign & Interactive Product Showcase
+
+### 1. Interactive "Live Simulator" Hero Preview (`src/components/home/HeroSimulatorPreview.tsx`)
+- **Live Continuous Timer**: Displays realistic pulsing single countdown timer (`03:09:42`).
+- **Real Authentic Question**: High-yield CSE item on Republic Act No. 6713 §5(a) (Mandatory 15 working days response period).
+- **Interactive Choices**: Clickable <kbd>A</kbd>, <kbd>B</kbd>, <kbd>C</kbd>, <kbd>D</kbd> options with correctness feedback.
+- **Choice Eliminator Strikethrough**: "Eliminate" and "Restore" distractor buttons replicating in-exam test-taking strategy.
+- **Instant Pedagogical Rationale**: Reveals official legal explanation card citing RA 6713.
+- **Virtual Arithmetic Scratchpad Preview**: Tab previewing manual calculation notes for 67-second item pacing.
+
+### 2. Asymmetric Hero Split & Level Switcher (`src/app/page.tsx`)
+- **Target Exam Cycle Pill**: Live countdown banner tracking `March 21, 2027 CSE-PPT • Cycle 1` with dynamically calculated days remaining.
+- **Level Switcher Widget**: Quick toggle between **Professional (170 items • 3h 10m)** and **Subprofessional (165 items • 2h 40m)**, updating CTAs and subtest details in real-time.
+- **Atmospheric Visual Polish**: Subtle micro-dot grid pattern, presidential navy/gold accents, and elevated glassmorphic cards.
+
+### 3. "The 67-Second Reality" Diagnostic Infographic
+- Highlights the #1 reason 85%+ fail the Civil Service Exam: Running out of time on the 170-item single continuous countdown.
+- Contrasts the fatal mistake (getting stuck on math and blindly guessing on 30–40 easy items) with the continuous timing method.
+
+### 4. Interactive Subtest & Syllabus Explorer (`src/components/home/SubtestExplorer.tsx`)
+- Tabbed directory covering all 5 official subtests: Verbal Ability, Numerical Ability, Analytical Ability (Pro only), General Information, and Clerical Ability (Subpro only).
+- Outlines high-yield topics, official CSC item counts, target pacing benchmarks, and direct practice launchers.
 
 ---
 
