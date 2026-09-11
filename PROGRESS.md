@@ -2,9 +2,9 @@
 
 *Handoff & status log for autonomous unattended operation per AGENTS.md §9.*
 
-## 🎉 Status: All Enhancement Phases & Homepage UI Redesign Complete & Fully Verified
+## 🎉 Status: All Enhancement Phases, UI Overhaul & Codex Design System Complete & Fully Verified
 
-All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE Implementation)**, **Phase 3 (User Experience & Audit)**, **Enhancement Phase 1 (Testing Experience & Runner UX)**, **Enhancement Phase 2 (Pedagogy, Analytics & Spaced Repetition)**, **Enhancement Phase 3 (PWA & Offline-First Support)**, **Enhancement Phase 4 (Better Auth Cloud Sync & RA 10173 Privacy Controls)**, and **Enhancement Phase 5 (Homepage UI Redesign & Interactive Product Showcase)** have been completed, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` exit code 0).
+All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE Implementation)**, **Phase 3 (User Experience & Audit)**, **Enhancement Phase 1 (Testing Experience & Runner UX)**, **Enhancement Phase 2 (Pedagogy, Analytics & Spaced Repetition)**, **Enhancement Phase 3 (PWA & Offline-First Support)**, **Enhancement Phase 4 (Better Auth Cloud Sync & RA 10173 Privacy Controls)**, **Enhancement Phase 5 (Homepage UI Redesign & Interactive Product Showcase)**, and **Phase 5.5 (Codex Design & Product Hierarchy Overhaul)** have been completed, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` exit code 0).
 
 ---
 
@@ -12,7 +12,7 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **`npm run check:architecture`**: ✅ **PASSED** (Strictly zero hardcoded exam-slug branching inside `src/features/exam-engine/`).
 - **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with 0 errors).
 - **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
-- **`npm run test`**: ✅ **PASSED** (163 unit & real PostgreSQL integration tests across 33 test suites passing).
+- **`npm run test`**: ✅ **PASSED** (168 unit & real PostgreSQL integration tests across 34 test suites passing).
 - **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 33 routes compiled and prerendered).
 - **`npm run test:e2e`**: ✅ **PASSED** (8 Playwright end-to-end browser test suites passing: Landing page with interactive hero, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, guest localStorage draft auto-save & reload resumption, keyboard shortcuts/choice eliminator/virtual scratchpad, dashboard target countdown & Leitner SRS mistake bank, and Sign In modal viewport-centered bounds test).
 
@@ -295,6 +295,45 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 ### 4. Interactive Subtest & Syllabus Explorer (`src/components/home/SubtestExplorer.tsx`)
 - Tabbed directory covering all 5 official subtests: Verbal Ability, Numerical Ability, Analytical Ability (Pro only), General Information, and Clerical Ability (Subpro only).
 - Outlines high-yield topics, official CSC item counts, target pacing benchmarks, and direct practice launchers.
+
+---
+
+## 🏛️ Phase 5.5: Codex Product System & Visual Hierarchy Redesign
+
+### 1. Visual Restraint & Semantic Color Architecture
+- **Semantic Palette**: Replaced repetitive generic blue with an intentional institutional system: Presidential Navy (`#0f172a`), Action Blue (`#2563eb`), Milestone Gold (`#d97706`), Mastery Green (`#059669`), Urgent Red (`#dc2626`), and Neutral Slate chrome.
+- **Pill Badge Audit**: Completely eliminated decorative badge pills above headers across public, exam, and dashboard views. Badges are strictly reserved for genuine status/metadata (`Box 1`, `15 min read`, `Filipino`, `High Yield`).
+- **Surface & Elevation Discipline**: Removed nested "cards-in-cards" and excessive borders. Used clean spacing, subtle background contrast, and typographic weight hierarchy.
+
+### 2. Dashboard: "Next Best Step" Recommendation Engine
+- **Engine Implementation (`src/features/dashboard/recommendation-engine.ts`)**:
+  - Automatically evaluates learner history, attempt counts, Leitner spaced repetition queue, and subtest accuracy.
+  - Priority ladder:
+    1. **Guest / Zero Attempts**: "Start Free 10-Question Diagnostic" with zero login barrier.
+    2. **Due Mistakes**: "Review Due Spaced Repetition Items" linking directly to Leitner flashcard review.
+    3. **Subtest Below 80%**: "Target Weak Subtest" (e.g. Numerical Ability at 62%) with direct topic drill launcher.
+    4. **Passing / High Mastery**: "Readiness Peak" recommending the Full 170-Item Mock Exam under single continuous timer.
+- **Unit Tested (`tests/unit/dashboard/recommendation-engine.test.ts`)**: 4 unit tests verifying all 4 priority states.
+- **Command Center Layout (`DashboardView.tsx`)**: Elevates the dynamic recommendation hero above supporting metrics (tests completed, accuracy %, streak, subtest radar bars, offline storage controls).
+
+### 3. Homepage: Intentional Conversion Ladder & Credible CSC Sourcing
+- **Clear Conversion Ladder (`src/app/page.tsx`)**:
+  - Live Target Exam Cycle banner + Professional vs Subprofessional level switcher.
+  - Primary CTA: "Take Free 10-Question Diagnostic" with immediate guest access.
+  - Secondary Proof: Interactive live simulator with Republic Act No. 6713 distractor elimination.
+  - 5-Step Civil Service Review Cycle infographic: Practice → Diagnose → Review Mistakes (SRS) → Targeted Retry → Measurable Readiness.
+- **Authoritative Sourcing**: Replaced sensationalist claims with official Civil Service Commission (CSC) statistical pass-rate data (~14–18%), articulating that over 80% fail primarily due to running out of time on the 170-item continuous timer.
+
+### 4. Public Content Pages: Distinct Editorial Layouts
+- **Practice Directory (`/practice`)**: 2-column layout with left sticky subtest/level filter rail and scannable topic directory with instant drill launchers.
+- **Study Guides (`/guides`)**: Featured legal hero (RA 6713 Code of Conduct) with editorial reading cards and official subtest syllabus tags.
+- **Articles (`/articles`)**: Featured timing strategy article hero with chronological article list.
+- **FAQ (`/faq`)**: CSC verification stamps, "Most Asked Questions" filter chips, and contextual practice links.
+
+### 5. Exam Runner: Focus Mode Ergonomics (`src/features/practice/ExamRunner.tsx`)
+- **Desktop Persistent Palette Rail**: Right-hand question grid rail visible on desktop screens so examinees see answered/flagged status at all times without opening a drawer.
+- **Distinct Selection State**: Selected choices feature clear contrast (`border-slate-900 bg-slate-50 ring-1 ring-slate-900/20`) and an explicit checked radio icon.
+- **Compact Progress Counter**: Live top bar indicating `Answered: X/N • Flagged: Y` alongside the continuous timer.
 
 ---
 
