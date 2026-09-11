@@ -7,7 +7,11 @@ import {
   type AttemptSummary,
   type SubjectReadinessMetric,
   type TargetExamConfig,
+  type StoredMistakeItem,
 } from "@/lib/storage";
+import {
+  getNextBestStepRecommendation,
+} from "@/features/dashboard/recommendation-engine";
 import {
   Award,
   BookOpen,
@@ -18,7 +22,6 @@ import {
   TrendingUp,
   AlertTriangle,
   Bookmark,
-  Sparkles,
   History,
   Target,
   Download,
@@ -38,6 +41,8 @@ export function DashboardView() {
   const [cloudSyncing, setCloudSyncing] = useState(false);
   const [history, setHistory] = useState<AttemptSummary[]>([]);
   const [mistakeCount, setMistakeCount] = useState(0);
+  const [dueMistakes, setDueMistakes] = useState<StoredMistakeItem[]>([]);
+  const [allMistakes, setAllMistakes] = useState<StoredMistakeItem[]>([]);
   const [bookmarkCount, setBookmarkCount] = useState(0);
   const [streakDays, setStreakDays] = useState(0);
   const [subjectReadiness, setSubjectReadiness] = useState<SubjectReadinessMetric[]>([]);
@@ -61,6 +66,8 @@ export function DashboardView() {
 
     const savedMistakes = LocalStorageService.getMistakeBank();
     setMistakeCount(savedMistakes.length);
+    setAllMistakes(savedMistakes);
+    setDueMistakes(LocalStorageService.getDueMistakes());
 
     const savedBookmarks = LocalStorageService.getBookmarks();
     setBookmarkCount(savedBookmarks.length);
@@ -200,19 +207,26 @@ export function DashboardView() {
       : 0;
   const studyStreak = streakDays;
 
+  const subtestAccuracies = subjectReadiness.map((s) => ({
+    name: s.subjectName,
+    accuracy: s.accuracyPercentage,
+  }));
+  const recommendation = getNextBestStepRecommendation(
+    history,
+    dueMistakes,
+    allMistakes,
+    subtestAccuracies
+  );
+
   return (
     <div className="py-8 px-4 sm:px-6 lg:px-8 animate-page-enter">
       <div className="max-w-6xl mx-auto space-y-8">
         {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold mb-2">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Civil Service Preparation Hub</span>
-            </div>
             <h1 className="text-3xl font-black text-slate-900 tracking-tight">User Dashboard</h1>
             <p className="text-slate-600 text-sm mt-1">
-              Track your readiness, review past attempts, and master identified weak points.
+              Personalized study pacing and readiness analytics based on your practice history.
             </p>
           </div>
 
@@ -220,13 +234,72 @@ export function DashboardView() {
             <Link
               href="/exams/professional/quick"
               prefetch={true}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-sm font-bold shadow-md shadow-brand-700/20 transition"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold shadow-sm transition"
             >
               <Clock className="w-4 h-4" />
               <span>Start Quick Drill</span>
             </Link>
           </div>
         </div>
+
+        {/* ========================================================================= */}
+        {/* PRIORITY 1: Next Best Step Recommendation Panel */}
+        {/* ========================================================================= */}
+        <section aria-labelledby="recommended-step-heading" className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div className="space-y-2.5 max-w-2xl">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider ${
+                    recommendation.urgency === "urgent"
+                      ? "bg-rose-100 text-rose-800 border border-rose-200"
+                      : recommendation.urgency === "high"
+                      ? "bg-brand-100 text-brand-800 border border-brand-200"
+                      : recommendation.urgency === "medium"
+                      ? "bg-amber-100 text-amber-800 border border-amber-200"
+                      : "bg-slate-100 text-slate-700 border border-slate-200"
+                  }`}
+                >
+                  {recommendation.tag}
+                </span>
+                {recommendation.badgeCount !== undefined && recommendation.badgeCount > 0 && (
+                  <span className="text-xs font-bold text-rose-600">
+                    {recommendation.badgeCount} due for review
+                  </span>
+                )}
+              </div>
+
+              <h2 id="recommended-step-heading" className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                {recommendation.title}
+              </h2>
+
+              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
+                {recommendation.description}
+              </p>
+
+              {recommendation.subtext && (
+                <div className="text-xs text-slate-500 font-medium pt-0.5">
+                  {recommendation.subtext}
+                </div>
+              )}
+            </div>
+
+            <div className="shrink-0 flex flex-col sm:flex-row lg:flex-col gap-3">
+              <Link
+                href={recommendation.actionHref}
+                prefetch={true}
+                className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm shadow-sm transition text-white ${
+                  recommendation.urgency === "urgent"
+                    ? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"
+                    : "bg-slate-900 hover:bg-slate-800 shadow-slate-900/20"
+                }`}
+              >
+                <span>{recommendation.actionLabel}</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+        </section>
 
         {/* 4 Stat Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

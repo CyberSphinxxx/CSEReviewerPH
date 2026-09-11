@@ -20,6 +20,7 @@ describe("DashboardView Component", () => {
     render(<DashboardView />);
 
     expect(screen.getByText("User Dashboard")).toBeInTheDocument();
+    expect(screen.getByText(/Diagnostic Benchmark|Take Your 10-Question/i)).toBeInTheDocument();
     expect(screen.getByText("Overall Accuracy")).toBeInTheDocument();
     expect(screen.getByText("Tests Completed")).toBeInTheDocument();
     expect(screen.getByText("Study Streak")).toBeInTheDocument();
