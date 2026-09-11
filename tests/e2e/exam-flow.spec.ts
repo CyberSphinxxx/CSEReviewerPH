@@ -150,7 +150,7 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
     // Press 'A' key to select choice A on Q1
     await page.keyboard.press("KeyA");
     const choiceACard = page.getByTestId("choice-card-A");
-    await expect(choiceACard).toHaveClass(/border-brand-600/);
+    await expect(choiceACard).toHaveClass(/border-slate-900/);
 
     // Press 'F' key to flag question
     await page.keyboard.press("KeyF");

@@ -32,6 +32,7 @@ import {
   CheckCircle2,
   BookOpen,
   Contrast,
+  Check,
 } from "lucide-react";
 
 import {
@@ -477,12 +478,20 @@ export function ExamRunner({
             <button
               type="button"
               onClick={() => setShowReviewModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white text-xs sm:text-sm font-bold shadow-md shadow-brand-700/20 transition active:scale-95 shrink-0"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold shadow-sm transition active:scale-95 shrink-0"
             >
               <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span>Submit</span>
             </button>
           </div>
+        </div>
+
+        {/* Real-time Progress Bar */}
+        <div className="w-full bg-slate-200 h-1">
+          <div
+            className="bg-slate-900 h-1 transition-all duration-300"
+            style={{ width: `${summary.total > 0 ? Math.round((summary.answered / summary.total) * 100) : 0}%` }}
+          />
         </div>
       </header>
 
@@ -525,8 +534,10 @@ export function ExamRunner({
       )}
 
       {/* Main Testing Content Area */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-6 md:p-8 pb-28 sm:pb-32">
-        {currentQuestion && (
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 md:p-8 pb-28 sm:pb-32">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="lg:col-span-8 space-y-6">
+            {currentQuestion && (
           <div className={`rounded-2xl shadow-sm p-6 sm:p-8 transition-all ${highContrast ? "bg-white border-2 border-slate-900" : "bg-white border border-slate-200"}`}>
             {/* Question Header & Subtest Tag */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
@@ -614,8 +625,8 @@ export function ExamRunner({
                     choiceBadgeClasses = "bg-rose-600 text-white";
                   }
                 } else if (isSelected) {
-                  choiceCardClasses = "border-brand-600 bg-brand-50/50 shadow-xs";
-                  choiceBadgeClasses = "bg-brand-600 text-white";
+                  choiceCardClasses = "border-slate-900 bg-slate-50 ring-1 ring-slate-900/20 shadow-xs";
+                  choiceBadgeClasses = "bg-slate-900 text-white";
                 }
 
                 if (isEliminated) {
@@ -657,6 +668,16 @@ export function ExamRunner({
                       >
                         {choice.text}
                       </span>
+                      <span
+                        className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 self-center transition-colors ${
+                          isSelected
+                            ? "border-slate-900 bg-slate-900 text-white"
+                            : "border-slate-300 bg-white"
+                        }`}
+                        aria-hidden="true"
+                      >
+                        {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </span>
                     </button>
 
                     {/* Strikethrough / Choice Eliminator Tool */}
@@ -678,18 +699,18 @@ export function ExamRunner({
               })}
             </div>
 
-            {/* Practice Mode: Instant Concept Rationale Card */}
+            {/* Practice Instant Pedagogical Rationale Panel */}
             {rules.mode === "practice" &&
               practiceFeedbackMode === "instant" &&
               Boolean(currentAnswer?.selectedChoiceId) && (
                 <div
-                  className={`mt-6 p-5 rounded-2xl border transition-all animate-in fade-in duration-200 ${
+                  className={`mt-6 p-5 rounded-xl border animate-fade-in ${
                     currentQuestion.choices.find((c) => c.id === currentAnswer?.selectedChoiceId)?.isCorrect
-                      ? "bg-emerald-50/80 border-emerald-200 text-emerald-950"
-                      : "bg-rose-50/80 border-rose-200 text-rose-950"
+                      ? "bg-emerald-50/70 border-emerald-200"
+                      : "bg-rose-50/70 border-rose-200"
                   }`}
                 >
-                  <div className="flex items-center gap-2 mb-2 font-bold text-sm">
+                  <div className="flex items-center gap-2 font-bold text-sm mb-2">
                     {currentQuestion.choices.find((c) => c.id === currentAnswer?.selectedChoiceId)?.isCorrect ? (
                       <>
                         <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
@@ -746,14 +767,80 @@ export function ExamRunner({
                 setSession((prev) => navigateNext(prev));
               }
             }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm shadow-xs transition active:scale-95"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm shadow-xs transition active:scale-95"
             id="next-question-btn"
           >
             <span>{session.currentIndex === session.totalQuestions - 1 ? "Review" : "Next"}</span>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
-      </main>
+      </div>
+
+      {/* Desktop Persistent Question Palette */}
+      <aside className="hidden lg:block lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs sticky top-24 space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <LayoutGrid className="w-4 h-4 text-slate-500" />
+            <span>Question Palette</span>
+          </h3>
+          <span className="text-xs text-slate-500 font-semibold">
+            {summary.answered}/{summary.total} answered
+          </span>
+        </div>
+
+        {/* Status Legend */}
+        <div className="flex items-center gap-3 text-[11px] font-medium text-slate-600">
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded bg-slate-900" />
+            <span>Answered</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded bg-white border border-slate-300" />
+            <span>Empty</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="w-2.5 h-2.5 rounded bg-amber-100 border border-amber-400" />
+            <span>Flagged</span>
+          </div>
+        </div>
+
+        {/* Question Grid */}
+        <div className="grid grid-cols-5 gap-1.5 max-h-[55vh] overflow-y-auto p-1">
+          {initialQuestions.map((q, idx) => {
+            const ans = session.answers.get(q.id);
+            const isAnswered = Boolean(ans?.selectedChoiceId);
+            const isFlagged = Boolean(ans?.isFlagged);
+            const isCurrent = idx === session.currentIndex;
+
+            let btnClasses = "bg-white border-slate-200 text-slate-700 hover:bg-slate-50";
+            if (isAnswered) {
+              btnClasses = "bg-slate-900 border-slate-900 text-white font-bold";
+            }
+            if (isFlagged) {
+              btnClasses = "bg-amber-100 border-amber-400 text-amber-800 font-bold";
+            }
+            if (isCurrent) {
+              btnClasses += " ring-2 ring-brand-500 ring-offset-2";
+            }
+
+            return (
+              <button
+                key={q.id}
+                type="button"
+                onClick={() => {
+                  triggerHaptic(10);
+                  setSession((prev) => jumpToQuestion(prev, idx));
+                }}
+                className={`h-9 rounded-lg border text-xs font-semibold flex items-center justify-center transition ${btnClasses}`}
+              >
+                {idx + 1}
+              </button>
+            );
+          })}
+        </div>
+      </aside>
+    </div>
+  </main>
 
       {/* Virtual Scratchpad Component */}
       <ExamScratchpad
