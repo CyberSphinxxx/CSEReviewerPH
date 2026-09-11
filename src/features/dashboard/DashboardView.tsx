@@ -27,9 +27,15 @@ import {
   ShieldCheck,
   Calendar,
   Settings2,
+  CloudUpload,
 } from "lucide-react";
+import { useSession } from "@/lib/auth/auth-client";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 export function DashboardView() {
+  const { data: session, refetch: refetchSession } = useSession();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [cloudSyncing, setCloudSyncing] = useState(false);
   const [history, setHistory] = useState<AttemptSummary[]>([]);
   const [mistakeCount, setMistakeCount] = useState(0);
   const [bookmarkCount, setBookmarkCount] = useState(0);
@@ -131,6 +137,27 @@ export function DashboardView() {
       LocalStorageService.clearAllGuestData();
       loadDashboardData();
       setFeedbackMessage("All local data has been reset.");
+      setTimeout(() => setFeedbackMessage(null), 4000);
+    }
+  };
+
+  const handleCloudSync = async () => {
+    if (!session?.user) {
+      setAuthModalOpen(true);
+      return;
+    }
+    setCloudSyncing(true);
+    try {
+      const res = await LocalStorageService.syncGuestDataToCloud();
+      if (res.success) {
+        setFeedbackMessage(`Progress synced to cloud! (${res.synced?.attempts ?? 0} exams)`);
+      } else {
+        setFeedbackMessage(res.error || "Sync completed.");
+      }
+    } catch {
+      setFeedbackMessage("Sync failed. Please check network connection.");
+    } finally {
+      setCloudSyncing(false);
       setTimeout(() => setFeedbackMessage(null), 4000);
     }
   };
@@ -583,6 +610,16 @@ export function DashboardView() {
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
+                onClick={handleCloudSync}
+                disabled={cloudSyncing}
+                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition shadow-sm disabled:opacity-50"
+              >
+                <CloudUpload className="w-3.5 h-3.5" />
+                <span>{cloudSyncing ? "Syncing..." : session?.user ? "Sync to Cloud" : "Save to Cloud Account"}</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={handleExportBackup}
                 className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 transition shadow-sm"
               >
@@ -612,6 +649,15 @@ export function DashboardView() {
             </div>
           </div>
         </div>
+
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={() => setAuthModalOpen(false)}
+          onSuccess={() => {
+            refetchSession();
+            handleCloudSync();
+          }}
+        />
       </div>
     </div>
   );

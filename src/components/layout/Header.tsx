@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Award } from "lucide-react";
+import { UserNav } from "@/components/auth/UserNav";
 
 export function Header() {
   return (
@@ -56,6 +57,7 @@ export function Header() {
           >
             Dashboard
           </Link>
+          <UserNav />
         </nav>
       </div>
     </header>

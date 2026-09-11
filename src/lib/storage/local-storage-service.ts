@@ -669,7 +669,7 @@ export class LocalStorageService {
   /* Backup, Export, Restore, & Privacy Reset (RA 10173)                        */
   /* -------------------------------------------------------------------------- */
 
-  public static exportAllDataAsJson(): string {
+  public static exportAllGuestData(): GuestBackupPayload {
     const history = this.getAttemptHistory();
     const attempts: Record<string, StoredAttemptDetails> = {};
 
@@ -680,7 +680,7 @@ export class LocalStorageService {
       }
     }
 
-    const payload: GuestBackupPayload = {
+    return {
       version: 1,
       exportedAt: new Date().toISOString(),
       history,
@@ -688,10 +688,51 @@ export class LocalStorageService {
       mistakeBank: this.getMistakeBank(),
       bookmarks: this.getBookmarks(),
       streak: this.getStudyStreak(),
+      targetExam: this.getTargetExamConfig(),
     };
-
-    return JSON.stringify(payload, null, 2);
   }
+
+  public static exportAllDataAsJson(): string {
+    return JSON.stringify(this.exportAllGuestData(), null, 2);
+  }
+
+  public static async syncGuestDataToCloud(): Promise<{
+    success: boolean;
+    message?: string;
+    synced?: { attempts: number; bookmarks: number; mistakes: number };
+    error?: string;
+  }> {
+    try {
+      const payload = this.exportAllGuestData();
+      const res = await fetch("/api/user/sync", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        return {
+          success: false,
+          error: data.error || `Sync failed with status ${res.status}`,
+        };
+      }
+
+      return {
+        success: true,
+        message: data.message,
+        synced: data.synced,
+      };
+    } catch (err) {
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Network error during sync",
+      };
+    }
+  }
+
 
   public static importDataFromJson(jsonString: string): { success: boolean; error?: string } {
     try {

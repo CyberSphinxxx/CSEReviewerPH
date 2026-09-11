@@ -1,7 +1,19 @@
 import React from "react";
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { vi } from "vitest";
 import { DashboardView } from "@/features/dashboard/DashboardView";
+
+vi.mock("@/lib/auth/auth-client", () => ({
+  useSession: () => ({
+    data: null,
+    isPending: false,
+    refetch: vi.fn(),
+  }),
+  signOut: vi.fn(),
+  signIn: { email: vi.fn() },
+  signUp: { email: vi.fn() },
+}));
 
 describe("DashboardView Component", () => {
   it("renders accuracy, test count, streak, subtests, and guest storage controls", () => {

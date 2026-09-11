@@ -96,4 +96,5 @@ export interface GuestBackupPayload {
   mistakeBank: StoredMistakeItem[];
   bookmarks: StoredBookmarkItem[];
   streak: StudyStreakData;
+  targetExam?: TargetExamConfig;
 }

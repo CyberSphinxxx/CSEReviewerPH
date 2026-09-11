@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import { vi } from "vitest";
 
 if (typeof HTMLCanvasElement !== "undefined") {
   HTMLCanvasElement.prototype.getContext = (() => ({
@@ -30,3 +31,21 @@ if (typeof HTMLCanvasElement !== "undefined") {
 
   HTMLCanvasElement.prototype.toDataURL = () => "";
 }
+
+// Global mock for better-auth client to prevent hanging network calls and nanostores teardown errors
+vi.mock("@/lib/auth/auth-client", () => ({
+  authClient: {
+    useSession: () => ({ data: null, isPending: false }),
+    signIn: { email: vi.fn() },
+    signUp: { email: vi.fn() },
+    signOut: vi.fn(),
+  },
+  useSession: () => ({
+    data: null,
+    isPending: false,
+    refetch: vi.fn(),
+  }),
+  signIn: { email: vi.fn() },
+  signUp: { email: vi.fn() },
+  signOut: vi.fn(),
+}));
