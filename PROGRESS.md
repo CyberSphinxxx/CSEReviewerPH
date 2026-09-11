@@ -14,7 +14,19 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
 - **`npm run test`**: ✅ **PASSED** (163 unit & real PostgreSQL integration tests across 33 test suites passing).
 - **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 33 routes compiled and prerendered).
-- **`npm run test:e2e`**: ✅ **PASSED** (7 Playwright end-to-end browser test suites passing: Landing page with interactive hero, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, guest localStorage draft auto-save & reload resumption, keyboard shortcuts/choice eliminator/virtual scratchpad, and dashboard target countdown & Leitner SRS mistake bank).
+- **`npm run test:e2e`**: ✅ **PASSED** (8 Playwright end-to-end browser test suites passing: Landing page with interactive hero, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, guest localStorage draft auto-save & reload resumption, keyboard shortcuts/choice eliminator/virtual scratchpad, dashboard target countdown & Leitner SRS mistake bank, and Sign In modal viewport-centered bounds test).
+
+---
+
+## 🔒 Auth & Modal Fixes (Recent Resolution)
+1. **Live Database Schema Sync (`accounts.issuer`)**:
+   - Better Auth v1 expects an `issuer text` column on `accounts`.
+   - Generated and executed migration `0002_lush_madame_hydra.sql` (`ALTER TABLE "accounts" ADD COLUMN "issuer" text;`) against Neon PostgreSQL.
+   - Tested live email/password signup and signin roundtrip with session cookie creation.
+2. **AuthModal Viewport Containing Block Trap Resolution**:
+   - Root cause: `<header>` uses `backdrop-blur-md` and `sticky top-0`. In CSS specifications, `backdrop-filter` creates a new containing block for `position: fixed` descendants, constraining the 500px modal within the 64px header height and pushing the top half off-screen (`y ≈ -218px`).
+   - Fix: Updated `src/components/auth/AuthModal.tsx` to render through `createPortal(..., document.body)` with an SSR hydration guard.
+   - Automated verification: Added test in `tests/e2e/exam-flow.spec.ts` checking `modal.boundingBox().y > 10` and confirming complete in-bounds visibility and dismissibility. Passes in 1.0s.
 
 ---
 
