@@ -15,6 +15,13 @@
       "when": 1788928737470,
       "tag": "0001_soft_spiral",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789090503522,
+      "tag": "0002_lush_madame_hydra",
+      "breakpoints": true
     }
   ]
 }
