@@ -188,14 +188,20 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
   });
 
   test("displays target exam countdown on dashboard and supports Leitner SRS filters in mistake bank", async ({ page }) => {
-    // 1. Check Target Exam Countdown & Daily Pacing Card
+    // 1. Check Dashboard Header, Footer & Target Exam Countdown
     await page.goto("/dashboard");
+    await expect(page.getByRole("banner")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Topics" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Sign In" })).toBeVisible();
+    await expect(page.getByRole("contentinfo")).toBeVisible();
+
     await expect(page.getByText("Target Exam Pacing")).toBeVisible();
     await expect(page.getByText(/Remaining/i)).toBeVisible();
     await expect(page.getByText(/Daily Goal/i)).toBeVisible();
 
-    // 2. Open Mistake Bank
+    // 2. Open Mistake Bank and verify persistent navigation
     await page.goto("/dashboard/mistakes");
+    await expect(page.getByRole("banner")).toBeVisible();
     await expect(page.getByText("Leitner SRS")).toBeVisible();
     await expect(page.getByText("Your Mistake Bank is empty!")).toBeVisible();
   });

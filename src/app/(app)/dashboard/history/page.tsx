@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { History, ChevronLeft, Award, Trash2 } from "lucide-react";
 import { LocalStorageService, type AttemptSummary } from "@/lib/storage";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<AttemptSummary[]>([]);
@@ -21,8 +23,10 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <Header />
+      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 animate-page-enter">
+        <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <Link
             href="/dashboard"
@@ -105,6 +109,8 @@ export default function HistoryPage() {
           )}
         </div>
       </div>
+      </main>
+      <Footer />
     </div>
   );
 }

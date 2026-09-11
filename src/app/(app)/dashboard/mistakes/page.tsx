@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { ExamRunner } from "@/features/practice/ExamRunner";
 import { LocalStorageService, type StoredMistakeItem } from "@/lib/storage";
+import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import {
   AlertTriangle,
   ChevronLeft,
@@ -127,17 +129,19 @@ export default function MistakesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center justify-between">
-          <Link
-            href="/dashboard"
-            prefetch={true}
-            className="text-sm font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1"
-          >
-            <ChevronLeft className="w-4 h-4" /> Back to Dashboard
-          </Link>
-        </div>
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <Header />
+      <main className="flex-1 py-8 px-4 sm:px-6 lg:px-8 animate-page-enter">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex items-center justify-between">
+            <Link
+              href="/dashboard"
+              prefetch={true}
+              className="text-sm font-semibold text-brand-700 hover:text-brand-800 flex items-center gap-1"
+            >
+              <ChevronLeft className="w-4 h-4" /> Back to Dashboard
+            </Link>
+          </div>
 
         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
           {/* Header */}
@@ -393,6 +397,8 @@ export default function MistakesPage() {
           )}
         </div>
       </div>
+      </main>
+      <Footer />
     </div>
   );
 }

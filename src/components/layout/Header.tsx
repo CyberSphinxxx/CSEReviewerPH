@@ -4,7 +4,7 @@ import { UserNav } from "@/components/auth/UserNav";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md">
+    <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md print:hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <Link href="/" prefetch={true} className="flex items-center space-x-3 group">
           <div className="h-10 w-10 rounded-xl bg-brand-700 flex items-center justify-center text-white font-bold shadow-md shadow-brand-700/20 group-hover:bg-brand-800 transition">

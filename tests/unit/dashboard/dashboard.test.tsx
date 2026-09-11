@@ -76,5 +76,22 @@ describe("DashboardView Component", () => {
     expect(screen.getAllByText("1").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("100%")).toBeInTheDocument();
   });
+
+  it("renders DashboardPage with Header, Footer, and DashboardView", async () => {
+    const { default: DashboardPage } = await import("@/app/(app)/dashboard/page");
+    render(<DashboardPage />);
+
+    // Header brand and navigation should be present
+    expect(screen.getByRole("banner")).toBeInTheDocument();
+    expect(screen.getByText("Topics")).toBeInTheDocument();
+    expect(screen.getByText("Study Guides")).toBeInTheDocument();
+    expect(screen.getByText("Sign In")).toBeInTheDocument();
+
+    // Footer should be present
+    expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+
+    // DashboardView content should be present
+    expect(screen.getByText("User Dashboard")).toBeInTheDocument();
+  });
 });
 

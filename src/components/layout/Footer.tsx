@@ -5,7 +5,7 @@ import { Award, ShieldCheck, Mail, FileText, BookOpen, HelpCircle } from "lucide
 
 export function Footer() {
   return (
-    <footer className="border-t border-slate-200 bg-white text-slate-600 text-sm">
+    <footer className="border-t border-slate-200 bg-white text-slate-600 text-sm print:hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           {/* Brand & Mission Column */}
