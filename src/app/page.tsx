@@ -6,7 +6,6 @@ import {
   BookOpen,
   CheckCircle2,
   Clock,
-  ShieldAlert,
   ArrowRight,
   Calendar,
   Target,
@@ -114,24 +113,24 @@ export default function HomePage() {
                 {/* Primary & Secondary Call to Actions */}
                 <div className="pt-2 flex flex-wrap gap-4 items-center">
                   <Link
-                    href={`/exams/${selectedLevel}/full`}
+                    href={`/exams/${selectedLevel}/quick`}
                     prefetch={true}
-                    className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-brand-700 text-white font-bold text-sm sm:text-base shadow-lg shadow-brand-700/25 hover:bg-brand-800 transition transform active:scale-95"
+                    className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-slate-900 text-white font-bold text-sm sm:text-base shadow-sm hover:bg-slate-800 transition transform active:scale-95"
                   >
-                    <span>
-                      {selectedLevel === "professional"
-                        ? "Start Full Pro Mock Exam (170 items)"
-                        : "Start Full Subpro Mock Exam (165 items)"}
-                    </span>
+                    <span>Take Free 10-Question Diagnostic</span>
                     <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
                   </Link>
 
                   <Link
-                    href={`/exams/${selectedLevel}/quick`}
+                    href={`/exams/${selectedLevel}/full`}
                     prefetch={true}
-                    className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-white text-slate-800 font-bold text-sm sm:text-base border border-slate-300 shadow-sm hover:bg-slate-50 hover:border-slate-400 transition"
+                    className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-white text-slate-800 font-bold text-sm sm:text-base border border-slate-300 shadow-xs hover:bg-slate-50 hover:border-slate-400 transition"
                   >
-                    <span>Take Quick 10-Question Test</span>
+                    <span>
+                      {selectedLevel === "professional"
+                        ? "Full Mock Exam (170 items • 3h 10m)"
+                        : "Full Mock Exam (165 items • 2h 40m)"}
+                    </span>
                   </Link>
                 </div>
 
@@ -153,43 +152,87 @@ export default function HomePage() {
               </div>
 
               {/* Right Column: Live Interactive Exam Runner Simulator (5 cols) */}
-              <div className="lg:col-span-5 flex justify-center">
-                <HeroSimulatorPreview />
+              <div className="lg:col-span-5 flex flex-col items-center">
+                <div className="w-full">
+                  <div className="text-center mb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Live Simulator Preview &bull; RA 6713 High-Yield Item
+                    </span>
+                  </div>
+                  <HeroSimulatorPreview />
+                </div>
               </div>
             </div>
 
-            {/* Feature Highlight Cards */}
-            <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center mb-2.5">
-                  <Clock className="w-4 h-4 text-brand-600" />
-                </div>
-                <h3 className="font-bold text-sm text-slate-900">Real Continuous Timer</h3>
-                <p className="text-xs text-slate-500 mt-1">3h10m Pro, 2h40m Subpro unhindered single countdown</p>
+            {/* The 5-Step Civil Service Review Engine */}
+            <div className="mt-16 pt-12 border-t border-slate-200/80">
+              <div className="text-center max-w-2xl mx-auto mb-8 space-y-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  The Learning Loop
+                </span>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                  How This Platform Prepares You to Pass
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-600">
+                  A structured cycle designed around active recall and real examination time management.
+                </p>
               </div>
 
-              <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition">
-                <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center mb-2.5">
-                  <BookOpen className="w-4 h-4 text-emerald-600" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400">Step 1</span>
+                    <Clock className="w-4 h-4 text-brand-600" />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-900">1. Practice Immediately</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Begin drills with zero friction as a guest examinee.
+                  </p>
                 </div>
-                <h3 className="font-bold text-sm text-slate-900">Concept Explanations</h3>
-                <p className="text-xs text-slate-500 mt-1">Teaches the underlying grammar, math, and constitutional rules</p>
-              </div>
 
-              <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition">
-                <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center mb-2.5">
-                  <BrainCircuit className="w-4 h-4 text-amber-600" />
+                <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400">Step 2</span>
+                    <Target className="w-4 h-4 text-brand-600" />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-900">2. Diagnose Gaps</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Automated subtest breakdowns benchmarked against the 80% passing cutoff.
+                  </p>
                 </div>
-                <h3 className="font-bold text-sm text-slate-900">Leitner Mistake Bank</h3>
-                <p className="text-xs text-slate-500 mt-1">5-box spaced repetition system for high retention</p>
-              </div>
 
-              <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md transition">
-                <div className="w-8 h-8 rounded-lg bg-gold-50 border border-gold-200 flex items-center justify-center mb-2.5">
-                  <ShieldAlert className="w-4 h-4 text-gold-600" />
+                <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400">Step 3</span>
+                    <BrainCircuit className="w-4 h-4 text-rose-600" />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-900">3. Review Mistakes</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Missed items enter the 5-box Leitner Spaced Repetition bank.
+                  </p>
                 </div>
-                <h3 className="font-bold text-sm text-slate-900">100% Original Content</h3>
-                <p className="text-xs text-slate-500 mt-1">Written fresh per official CSC scope & syllabus</p>
+
+                <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400">Step 4</span>
+                    <BookOpen className="w-4 h-4 text-amber-600" />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-900">4. Targeted Retries</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Drill only questions due for review until concept mastery.
+                  </p>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white border border-slate-200/80 shadow-xs space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-400">Step 5</span>
+                    <Award className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <h3 className="font-bold text-sm text-slate-900">5. Measure Readiness</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Track subtest radar accuracy toward certified confidence.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -200,17 +243,16 @@ export default function HomePage() {
         {/* ========================================================================= */}
         <section className="py-16 bg-white border-b border-slate-200">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50/50 via-white to-slate-50 p-6 sm:p-10 shadow-sm">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-6 sm:p-10 shadow-xs">
               <div className="max-w-3xl space-y-3">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-100/80 text-brand-800 text-xs font-bold">
-                  <Target className="w-3.5 h-3.5" />
-                  <span>The Civil Service Exam Passing Secret</span>
-                </div>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                  CSC Time Management Analysis
+                </span>
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  Why 85%+ of Examinees Fail: The 67-Second Reality
+                  Overcoming the 67-Second Reality: How to Pass the CSE-PPT
                 </h2>
                 <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                  Unlike college entrance tests, the Civil Service Commission does <strong>not</strong> provide separate timers per subject. You have exactly <strong>190 minutes for 170 items</strong> (or 160 minutes for 165 items)—averaging just <strong>67 seconds per question</strong>.
+                  Official Civil Service Commission (CSC) statistical releases confirm historical passing rates hover between 14% and 18%. Over 80% of examinees fail not because questions are impossible, but because they run out of time on the unhindered <strong>170-item continuous timer</strong> (190 minutes Pro / 160 minutes Subpro)—averaging just <strong>67 seconds per item</strong>.
                 </p>
               </div>
 
@@ -254,10 +296,9 @@ export default function HomePage() {
         <section className="py-16 bg-slate-50 border-b border-slate-200">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
             <div className="text-center space-y-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold">
-                <BookOpen className="w-3.5 h-3.5" />
-                <span>Official Civil Service Commission Syllabus</span>
-              </div>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Official Civil Service Commission Scope
+              </span>
               <h2 className="text-3xl font-black text-slate-900 tracking-tight">
                 Explore Subtests &amp; High-Yield Syllabi
               </h2>
@@ -274,78 +315,81 @@ export default function HomePage() {
         {/* PREPARATION MODES SECTION */}
         {/* ========================================================================= */}
         <section className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-extrabold text-slate-900">Choose Your Preparation Mode</h2>
-            <p className="text-slate-600 mt-2">Whether you have 5 minutes or 3 hours, practice with purpose.</p>
+          <div className="text-center mb-12 space-y-1">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Exam Formats
+            </span>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Choose Your Preparation Mode</h2>
+            <p className="text-slate-600 text-sm mt-1">Whether you have 5 minutes or 3 hours, practice with purpose.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Quick Test */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs hover:shadow-md transition flex flex-col justify-between">
               <div>
-                <div className="inline-block px-3 py-1 bg-blue-50 text-brand-700 text-xs font-bold rounded-full mb-3">
-                  Daily Habit
-                </div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-2">
+                  Daily Pacing Drill
+                </span>
                 <h3 className="text-xl font-bold text-slate-900">Quick Test</h3>
                 <p className="text-sm text-slate-600 mt-2">
                   5–10 randomized questions with immediate results and educational explanations. Great for commutes and quick drills.
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
-                  <Clock className="w-4 h-4" /> 10 Minutes &bull; 10 Items
+                  <Clock className="w-4 h-4 text-slate-400" /> 10 Minutes &bull; 10 Items
                 </div>
               </div>
               <Link
                 href={`/exams/${selectedLevel}/quick`}
                 prefetch={true}
-                className="mt-6 block text-center py-2.5 px-4 rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 text-slate-800 font-semibold text-sm transition"
+                className="mt-6 block text-center py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition shadow-xs"
               >
                 Launch Quick Test &rarr;
               </Link>
             </div>
 
             {/* Medium Test */}
-            <div className="rounded-2xl border border-brand-200 bg-gradient-to-b from-brand-50/20 to-white p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs hover:shadow-md transition flex flex-col justify-between">
               <div>
-                <div className="inline-block px-3 py-1 bg-brand-100 text-brand-800 text-xs font-bold rounded-full mb-3">
-                  Focused Review
-                </div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-brand-700 block mb-2">
+                  Targeted Subtest Review
+                </span>
                 <h3 className="text-xl font-bold text-slate-900">Medium Test</h3>
                 <p className="text-sm text-slate-600 mt-2">
                   20–50 items across all subjects or a single chosen subtest. Perfect for weekend study sessions and topic assessments.
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
-                  <Clock className="w-4 h-4" /> 30 Minutes &bull; 30 Items
+                  <Clock className="w-4 h-4 text-slate-400" /> 30 Minutes &bull; 30 Items
                 </div>
               </div>
               <Link
                 href={`/exams/${selectedLevel}/medium`}
                 prefetch={true}
-                className="mt-6 block text-center py-2.5 px-4 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition"
+                className="mt-6 block text-center py-2.5 px-4 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-sm transition shadow-xs"
               >
                 Launch Medium Test &rarr;
               </Link>
             </div>
 
             {/* Full Mock Test */}
-            <div className="rounded-2xl border-2 border-brand-700 bg-white p-6 shadow-md hover:shadow-lg transition flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute -right-12 -top-12 w-28 h-28 bg-gold-400/20 rounded-full blur-xl" />
+            <div className="rounded-2xl border-2 border-slate-900 bg-white p-6 shadow-sm hover:shadow-md transition flex flex-col justify-between relative overflow-hidden">
+              <div className="absolute -right-12 -top-12 w-28 h-28 bg-gold-400/10 rounded-full blur-xl pointer-events-none" />
               <div>
-                <div className="inline-block px-3 py-1 bg-gold-100 text-gold-800 text-xs font-bold rounded-full mb-3">
-                  Exam Simulation
-                </div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gold-700 block mb-2">
+                  Real Exam Simulation
+                </span>
                 <h3 className="text-xl font-bold text-slate-900">Full Mock Exam</h3>
                 <p className="text-sm text-slate-600 mt-2">
                   170 items (Professional) or 165 items (Subprofessional) with continuous single timer, question navigator, and review screen.
                 </p>
                 <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
-                  <Clock className="w-4 h-4" />
+                  <Clock className="w-4 h-4 text-gold-600" />
                   {selectedLevel === "professional" ? "3 Hours 10 Mins • 170 Items" : "2 Hours 40 Mins • 165 Items"}
                 </div>
               </div>
               <Link
                 href={`/exams/${selectedLevel}/full`}
                 prefetch={true}
-                className="mt-6 block text-center py-2.5 px-4 rounded-lg bg-brand-800 hover:bg-brand-900 text-white font-semibold text-sm transition"
+                className="mt-6 block text-center py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm transition shadow-xs"
               >
                 Start Real Simulation &rarr;
               </Link>
@@ -360,11 +404,10 @@ export default function HomePage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-semibold mb-3">
-                  <BookOpen className="w-3.5 h-3.5" />
-                  <span>Comprehensive Learning Resources</span>
-                </div>
-                <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-1">
+                  Educational Syllabus
+                </span>
+                <h2 className="text-3xl font-black text-slate-900 tracking-tight">
                   High-Yield Study Guides &amp; Strategy
                 </h2>
                 <p className="text-slate-600 text-sm mt-1">

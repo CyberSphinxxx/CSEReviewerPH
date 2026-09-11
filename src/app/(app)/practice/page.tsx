@@ -1,82 +1,157 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import { getAllExamLevels } from "@/features/practice/practice-service";
-import { BookOpen, ChevronRight, Award } from "lucide-react";
+import { ArrowRight, Filter } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 
-export const metadata = {
-  title: "Practice by Topic — csereviewph.com",
-  description: "Targeted practice by subtest and topic for CSE Professional and Subprofessional.",
-};
-
 export default function PracticeTopicsPage() {
   const levels = getAllExamLevels();
+  const [selectedLevelId, setSelectedLevelId] = useState<string>(levels[0]?.id || "level-pro");
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("all");
+
+  const currentLevel = levels.find((l) => l.id === selectedLevelId) || levels[0];
+  const subjects = currentLevel?.subjects || [];
+
+  const displayedTopics = subjects.flatMap((sub) => {
+    if (selectedSubjectId !== "all" && sub.id !== selectedSubjectId) {
+      return [];
+    }
+    return sub.topics.map((t) => ({
+      ...t,
+      subjectName: sub.name,
+      subjectId: sub.id,
+    }));
+  });
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header />
       <main className="flex-1 py-10 px-4 sm:px-6 lg:px-8 animate-page-enter">
-      <div className="max-w-5xl mx-auto space-y-10">
-        {/* Header */}
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 border border-brand-200 text-brand-700 text-xs font-bold mb-3">
-            <BookOpen className="w-3.5 h-3.5" />
-            <span>Targeted Skill Drills</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Practice by Topic
-          </h1>
-          <p className="mt-2 text-slate-600 text-base max-w-2xl">
-            Focus on specific subtests and subject areas to build confidence and master underlying rules.
-          </p>
-        </div>
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* Header */}
+          <div className="space-y-2 border-b border-slate-200/80 pb-6">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Topic Directory
+            </span>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+              Practice by Subtest &amp; Topic
+            </h1>
+            <p className="text-slate-600 text-sm sm:text-base max-w-2xl leading-relaxed">
+              Target specific skill gaps with untimed or focused 10-question practice drills. All questions include detailed pedagogical explanations.
+            </p>
 
-        {/* Level Accordions / Sections */}
-        {levels.map((level) => (
-          <div key={level.id} className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8">
-            <div className="flex items-center gap-3 pb-6 border-b border-slate-100">
-              <div className="h-10 w-10 rounded-xl bg-brand-700 text-white flex items-center justify-center font-bold">
-                <Award className="w-5 h-5 text-gold-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">{level.name}</h2>
-                <p className="text-xs text-slate-500">{level.description}</p>
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-6">
-              {level.subjects.map((sub) => (
-                <div key={sub.id} className="space-y-3">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-brand-800">
-                    {sub.name}
-                  </h3>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {sub.topics.map((top) => (
-                      <Link
-                        key={top.id}
-                        href={`/practice/${top.id}`}
-                        prefetch={true}
-                        className="p-4 rounded-xl border border-slate-200 hover:border-brand-300 hover:bg-brand-50/30 transition flex items-center justify-between group"
-                      >
-                        <div>
-                          <h4 className="font-semibold text-sm text-slate-900 group-hover:text-brand-700 transition">
-                            {top.name}
-                          </h4>
-                          <span className="text-xs text-slate-500">
-                            {top.questionCount} {top.questionCount === 1 ? "question" : "questions"} available
-                          </span>
-                        </div>
-                        <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 transition group-hover:translate-x-0.5" />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+            {/* Level Selector Tabs */}
+            <div className="pt-4 flex flex-wrap items-center gap-2">
+              {levels.map((lvl) => (
+                <button
+                  key={lvl.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedLevelId(lvl.id);
+                    setSelectedSubjectId("all");
+                  }}
+                  className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
+                    selectedLevelId === lvl.id
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-100"
+                  }`}
+                >
+                  {lvl.name}
+                </button>
               ))}
             </div>
           </div>
-        ))}
+
+          {/* Main 2-Column Scannable Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Left Sidebar: Subtest Filter */}
+            <aside className="lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs lg:sticky lg:top-24 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 pb-2 border-b border-slate-100">
+                <Filter className="w-3.5 h-3.5" />
+                <span>Filter by Subtest</span>
+              </div>
+
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubjectId("all")}
+                  className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-between ${
+                    selectedSubjectId === "all"
+                      ? "bg-brand-50 text-brand-800 font-black"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  <span>All Subtests</span>
+                  <span className="text-[11px] font-semibold text-slate-400">
+                    {subjects.reduce((sum, s) => sum + s.topics.length, 0)} topics
+                  </span>
+                </button>
+
+                {subjects.map((sub) => (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => setSelectedSubjectId(sub.id)}
+                    className={`w-full text-left px-3.5 py-2.5 rounded-xl text-xs transition flex items-center justify-between ${
+                      selectedSubjectId === sub.id
+                        ? "bg-brand-50 text-brand-800 font-bold"
+                        : "text-slate-600 hover:bg-slate-50 font-medium"
+                    }`}
+                  >
+                    <span className="truncate pr-2">{sub.name}</span>
+                    <span className="text-[11px] text-slate-400 shrink-0">
+                      {sub.topics.length}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </aside>
+
+            {/* Right Content: Scannable Topic List with Direct Drill Launchers */}
+            <div className="lg:col-span-8 space-y-3">
+              <div className="flex items-center justify-between text-xs text-slate-500 px-1 pb-1">
+                <span>Showing {displayedTopics.length} high-yield topics</span>
+                <span>Immediate answer rationales enabled</span>
+              </div>
+
+              <div className="space-y-2.5">
+                {displayedTopics.map((top) => (
+                  <div
+                    key={top.id}
+                    className="p-4 sm:p-5 rounded-xl border border-slate-200 bg-white shadow-xs hover:border-slate-300 transition flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">
+                          {top.subjectName}
+                        </span>
+                        <span className="text-xs text-slate-400">&bull;</span>
+                        <span className="text-xs text-slate-500 font-medium">
+                          {top.questionCount} {top.questionCount === 1 ? "item" : "items"}
+                        </span>
+                      </div>
+                      <h2 className="text-base font-bold text-slate-900 group-hover:text-brand-700 transition">
+                        {top.name}
+                      </h2>
+                    </div>
+
+                    <Link
+                      href={`/practice/${top.id}`}
+                      prefetch={true}
+                      className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-xs transition shrink-0 self-start sm:self-center"
+                    >
+                      <span>Start Practice</span>
+                      <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition" />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
