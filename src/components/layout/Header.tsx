@@ -1,8 +1,31 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Award } from "lucide-react";
+import { useSession } from "@/lib/auth/auth-client";
+import { LocalStorageService } from "@/lib/storage";
 import { UserNav } from "@/components/auth/UserNav";
 
 export function Header() {
+  const { data: session } = useSession();
+  const [hasProgress, setHasProgress] = useState(false);
+
+  useEffect(() => {
+    try {
+      const history = LocalStorageService.getAttemptHistory();
+      const bookmarks = LocalStorageService.getBookmarks();
+      const mistakes = LocalStorageService.getMistakeBank();
+      if (history.length > 0 || bookmarks.length > 0 || mistakes.length > 0) {
+        setHasProgress(true);
+      }
+    } catch {
+      // LocalStorage unavailable in private mode or SSR
+    }
+  }, []);
+
+  const showProgress = Boolean(session?.user || hasProgress);
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md print:hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -27,7 +50,7 @@ export function Header() {
             prefetch={true}
             className="px-2.5 py-1.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-brand-700 rounded-lg hover:bg-slate-100 transition"
           >
-            Topics
+            Practice
           </Link>
           <Link
             href="/guides"
@@ -37,11 +60,10 @@ export function Header() {
             Study Guides
           </Link>
           <Link
-            href="/articles"
-            prefetch={true}
-            className="hidden md:inline-block px-2.5 py-1.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-brand-700 rounded-lg hover:bg-slate-100 transition"
+            href="/#how-it-works"
+            className="px-2.5 py-1.5 text-xs sm:text-sm font-medium text-slate-600 hover:text-brand-700 rounded-lg hover:bg-slate-100 transition"
           >
-            Articles
+            How It Works
           </Link>
           <Link
             href="/faq"
@@ -50,13 +72,17 @@ export function Header() {
           >
             FAQ
           </Link>
-          <Link
-            href="/dashboard"
-            prefetch={true}
-            className="inline-flex items-center justify-center rounded-lg bg-brand-600 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white shadow hover:bg-brand-700 transition"
-          >
-            Dashboard
-          </Link>
+
+          {showProgress && (
+            <Link
+              href="/dashboard"
+              prefetch={true}
+              className="inline-flex items-center justify-center rounded-lg bg-brand-600 px-3 py-1.5 text-xs sm:text-sm font-semibold text-white shadow hover:bg-brand-700 transition"
+            >
+              My Progress
+            </Link>
+          )}
+
           <UserNav />
         </nav>
       </div>

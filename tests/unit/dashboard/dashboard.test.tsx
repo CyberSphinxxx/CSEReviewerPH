@@ -84,7 +84,7 @@ describe("DashboardView Component", () => {
 
     // Header brand and navigation should be present
     expect(screen.getByRole("banner")).toBeInTheDocument();
-    expect(screen.getByText("Topics")).toBeInTheDocument();
+    expect(screen.getByText("Practice")).toBeInTheDocument();
     expect(screen.getByText("Study Guides")).toBeInTheDocument();
     expect(screen.getByText("Sign In")).toBeInTheDocument();
 
