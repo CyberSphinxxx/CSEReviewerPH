@@ -20,40 +20,62 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
   test("loads landing page with exam preparation options", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/Civil Service Exam Reviewer/i);
-    await expect(page.getByRole("heading", { level: 1 })).toContainText(/Pass the Philippine Civil Service Exam/i);
 
-    // Verify presence of preparation mode cards
+    // Verify simplified hero copy
+    await expect(page.getByText("PHILIPPINE CIVIL SERVICE EXAM REVIEWER", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(/Know what to study next/i);
+    await expect(
+      page.getByText(/Take a free 10-question diagnostic and get a clear view of your strongest and weakest CSE subtests/i)
+    ).toBeVisible();
+
+    // Verify streamlined header navigation for new visitors (no premature dashboard)
+    await expect(page.getByRole("link", { name: "Practice", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Study Guides", exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "How It Works" }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /Sign In/i })).toBeVisible();
+
+    // Verify presence of preparation mode cards below the fold
     await expect(page.getByRole("heading", { name: "Quick Test" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Medium Test" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Full Mock Exam" })).toBeVisible();
   });
 
-  test("renders calm diagnostic-to-study-plan preview in hero and navigates to practice preview", async ({ page }) => {
+  test("renders simplified hero with outcome study plan preview and navigates to how-it-works", async ({ page }) => {
     await page.goto("/");
 
-    // Verify calm, light diagnostic plan panel
-    await expect(page.getByText("Your diagnostic becomes a study plan")).toBeVisible();
-    await expect(page.getByText("10-question diagnostic complete")).toBeVisible();
-    await expect(page.getByText(/Overall estimate: 62%/i)).toBeVisible();
-    await expect(page.getByText(/Strong: Verbal Ability/i)).toBeVisible();
-    await expect(page.getByText(/Focus next: Numerical Ability/i)).toBeVisible();
-    await expect(page.getByText(/Recommended: Percentages — 10-minute drill/i)).toBeVisible();
+    // Verify trust points
+    await expect(page.getByText("No sign-up required")).toBeVisible();
+    await expect(page.getByText("Professional & Subprofessional").first()).toBeVisible();
+    await expect(page.getByText("Original questions")).toBeVisible();
+
+    // Verify quiet countdown detail
+    await expect(page.getByText(/Next CSE-PPT: March 21, 2027/i)).toBeVisible();
+
+    // Verify static diagnostic outcome plan panel
+    await expect(page.getByText("YOUR DIAGNOSTIC PLAN")).toBeVisible();
+    await expect(page.getByText("Estimated readiness")).toBeVisible();
+    await expect(page.getByText("62%")).toBeVisible();
+    await expect(page.getByText("Numerical Ability").first()).toBeVisible();
+    await expect(page.getByText("Needs focus")).toBeVisible();
+    await expect(page.getByText("Verbal Ability").first()).toBeVisible();
+    await expect(page.getByText("Strong", { exact: true })).toBeVisible();
+    await expect(page.getByText(/Percentages & Interest/i)).toBeVisible();
 
     // Verify primary CTA
-    const startDiagnosticBtn = page.getByRole("link", { name: /Start free diagnostic/i }).first();
+    const startDiagnosticBtn = page.getByRole("link", { name: /Start Free Diagnostic/i });
     await expect(startDiagnosticBtn).toBeVisible();
 
-    // Capture screenshot for visual verification
+    // Capture screenshot of simplified hero
     await page.screenshot({
       path: "C:/Users/USER-PC/.gemini/antigravity-ide/brain/c80a7e48-29ae-4a56-b0e7-d1c059795e93/hero_diagnostic_preview.png",
       fullPage: false,
     });
 
-    // Verify secondary preview link
-    const previewLink = page.getByRole("link", { name: "Preview the practice interface" });
-    await expect(previewLink).toBeVisible();
-    await previewLink.click();
-    await expect(page).toHaveURL(/\/practice/);
+    // Verify secondary CTA scrolls to How It Works section
+    const howItWorksBtn = page.getByRole("link", { name: "How It Works" }).first();
+    await expect(howItWorksBtn).toBeVisible();
+    await howItWorksBtn.click();
+    await expect(page.locator("#how-it-works")).toBeVisible();
   });
 
   test("takes Quick Test, flags a question, submits, and views results", async ({ page }) => {
@@ -219,7 +241,7 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
     // 1. Check Dashboard Header, Footer & Target Exam Countdown
     await page.goto("/dashboard");
     await expect(page.getByRole("banner")).toBeVisible();
-    await expect(page.getByRole("link", { name: "Topics" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Practice", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sign In" })).toBeVisible();
     await expect(page.getByRole("contentinfo")).toBeVisible();
 
