@@ -28,6 +28,34 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
     await expect(page.getByRole("heading", { name: "Full Mock Exam" })).toBeVisible();
   });
 
+  test("renders calm diagnostic-to-study-plan preview in hero and navigates to practice preview", async ({ page }) => {
+    await page.goto("/");
+
+    // Verify calm, light diagnostic plan panel
+    await expect(page.getByText("Your diagnostic becomes a study plan")).toBeVisible();
+    await expect(page.getByText("10-question diagnostic complete")).toBeVisible();
+    await expect(page.getByText(/Overall estimate: 62%/i)).toBeVisible();
+    await expect(page.getByText(/Strong: Verbal Ability/i)).toBeVisible();
+    await expect(page.getByText(/Focus next: Numerical Ability/i)).toBeVisible();
+    await expect(page.getByText(/Recommended: Percentages — 10-minute drill/i)).toBeVisible();
+
+    // Verify primary CTA
+    const startDiagnosticBtn = page.getByRole("link", { name: /Start free diagnostic/i }).first();
+    await expect(startDiagnosticBtn).toBeVisible();
+
+    // Capture screenshot for visual verification
+    await page.screenshot({
+      path: "C:/Users/USER-PC/.gemini/antigravity-ide/brain/c80a7e48-29ae-4a56-b0e7-d1c059795e93/hero_diagnostic_preview.png",
+      fullPage: false,
+    });
+
+    // Verify secondary preview link
+    const previewLink = page.getByRole("link", { name: "Preview the practice interface" });
+    await expect(previewLink).toBeVisible();
+    await previewLink.click();
+    await expect(page).toHaveURL(/\/practice/);
+  });
+
   test("takes Quick Test, flags a question, submits, and views results", async ({ page }) => {
     await page.goto("/exams/professional/quick");
 

@@ -16,7 +16,7 @@ import {
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
-import { HeroSimulatorPreview } from "@/components/home/HeroSimulatorPreview";
+import { HeroDiagnosticPlanPreview } from "@/components/home/HeroDiagnosticPlanPreview";
 import { SubtestExplorer } from "@/components/home/SubtestExplorer";
 
 export default function HomePage() {
@@ -33,7 +33,7 @@ export default function HomePage() {
 
       <main className="flex-1 animate-page-enter">
         {/* ========================================================================= */}
-        {/* HERO SECTION: Asymmetric 2-Column Split with Live Interactive Simulator */}
+        {/* HERO SECTION: Asymmetric 2-Column Split with Diagnostic Study Plan Preview */}
         {/* ========================================================================= */}
         <section className="relative overflow-hidden pt-8 pb-16 md:pt-14 md:pb-24 border-b border-slate-200/80 bg-gradient-to-b from-white via-brand-50/20 to-slate-50">
           {/* Subtle Atmospheric Grid Background */}
@@ -151,15 +151,15 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Right Column: Live Interactive Exam Runner Simulator (5 cols) */}
+              {/* Right Column: Diagnostic-to-Study-Plan Preview (5 cols) */}
               <div className="lg:col-span-5 flex flex-col items-center">
                 <div className="w-full">
                   <div className="text-center mb-3">
                     <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Live Simulator Preview &bull; RA 6713 High-Yield Item
+                      Personalized Study Plan &bull; Diagnostic Learning Loop
                     </span>
                   </div>
-                  <HeroSimulatorPreview />
+                  <HeroDiagnosticPlanPreview level={selectedLevel} />
                 </div>
               </div>
             </div>

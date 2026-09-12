@@ -12,9 +12,30 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **`npm run check:architecture`**: ✅ **PASSED** (Strictly zero hardcoded exam-slug branching inside `src/features/exam-engine/`).
 - **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with 0 errors).
 - **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
-- **`npm run test`**: ✅ **PASSED** (168 unit & real PostgreSQL integration tests across 34 test suites passing).
+- **`npm run test`**: ✅ **PASSED** (170 unit & real PostgreSQL integration tests across 34 test suites passing).
 - **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 33 routes compiled and prerendered).
-- **`npm run test:e2e`**: ✅ **PASSED** (8 Playwright end-to-end browser test suites passing: Landing page with interactive hero, Quick Test flow, 170-item Full Mock Exam, timeout auto-submit, guest localStorage draft auto-save & reload resumption, keyboard shortcuts/choice eliminator/virtual scratchpad, dashboard target countdown & Leitner SRS mistake bank, and Sign In modal viewport-centered bounds test).
+- **`npm run test:e2e`**: ✅ **PASSED** (9 Playwright end-to-end browser test suites passing, including the new calm diagnostic study plan preview and practice navigation check).
+
+---
+
+## 🎯 Hero Section Refinement: Diagnostic-to-Study-Plan Panel
+1. **Removed Misleading "Live Simulator" Preview**:
+   - Retired the faux dark OS simulator window with mock continuous timer, pre-revealed legal rationales, and fake pacing calculator.
+   - Avoids setting false expectations regarding exam fidelity, as the official CSE-PPT does not reveal answers live or feature simulated desktop widgets.
+2. **Introduced Calm, Light "Your diagnostic becomes a study plan" Preview (`src/components/home/HeroDiagnosticPlanPreview.tsx`)**:
+   - Proves the actual product loop: `Practice → Diagnosis → Targeted Review → Readiness`.
+   - Displays clear, authentic diagnostic metrics:
+     - `10-question diagnostic complete`
+     - `Overall estimate: 62%` with 80% passing cutoff benchmark
+     - `Strong: Verbal Ability (85%)`
+     - `Focus next: Numerical Ability (48%)`
+     - `Recommended: Percentages — 10-minute drill`
+   - Primary CTA: `[Start free diagnostic]` directly supporting examinee onboarding without competing against it.
+   - Secondary link: `“Preview the practice interface”` navigating to genuine practice runner (`/practice`).
+3. **Automated Verification & Visual Inspection**:
+   - Unit tests in `tests/unit/components/home-components.test.tsx` (9/9 passed).
+   - E2E Playwright test in `tests/e2e/exam-flow.spec.ts` with screenshot visual capture (9/9 passed).
+   - `npm run verify` exited with code 0.
 
 ---
 

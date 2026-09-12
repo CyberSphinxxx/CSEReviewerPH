@@ -1,66 +1,68 @@
 import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { HeroSimulatorPreview } from "@/components/home/HeroSimulatorPreview";
+import { HeroDiagnosticPlanPreview } from "@/components/home/HeroDiagnosticPlanPreview";
 import { SubtestExplorer } from "@/components/home/SubtestExplorer";
 
-describe("HeroSimulatorPreview Component", () => {
-  it("renders live simulator with single continuous timer badge and question content", () => {
-    render(<HeroSimulatorPreview />);
+describe("HeroDiagnosticPlanPreview Component", () => {
+  it("renders the diagnostic-to-study-plan header and completion badge", () => {
+    render(<HeroDiagnosticPlanPreview />);
 
-    // Timer badge
-    expect(screen.getByText("03:09:42")).toBeInTheDocument();
-    expect(screen.getByText(/Single Continuous Timer/i)).toBeInTheDocument();
-
-    // Item counter & question body
-    expect(screen.getByText(/Item 42 of 170/i)).toBeInTheDocument();
-    expect(screen.getByText(/Republic Act No. 6713/i)).toBeInTheDocument();
-
-    // Choices
-    expect(screen.getByText(/Within 15 working days from receipt/i)).toBeInTheDocument();
-    expect(screen.getByText(/Within 7 working days from receipt/i)).toBeInTheDocument();
+    expect(screen.getByText(/Your diagnostic becomes a study plan/i)).toBeInTheDocument();
+    expect(screen.getByText(/10-question diagnostic complete/i)).toBeInTheDocument();
   });
 
-  it("handles choice selection and displays instant pedagogical rationale", () => {
-    render(<HeroSimulatorPreview />);
+  it("renders the 4-step product loop proving the learning cycle", () => {
+    render(<HeroDiagnosticPlanPreview />);
 
-    // Select Choice A
-    const choiceA = screen.getByText(/Within 7 working days from receipt/i);
-    fireEvent.click(choiceA);
-
-    // Instant rationale should be visible
-    expect(screen.getByText(/Instant Rationale • Official Legal Basis/i)).toBeInTheDocument();
-    expect(screen.getByText(/Section 5\(a\) of RA 6713 explicitly mandates/i)).toBeInTheDocument();
+    expect(screen.getByText("Practice")).toBeInTheDocument();
+    expect(screen.getByText("Diagnosis")).toBeInTheDocument();
+    expect(screen.getByText("Targeted Review")).toBeInTheDocument();
+    expect(screen.getByText("Readiness")).toBeInTheDocument();
   });
 
-  it("allows eliminating distractors and restoring them", () => {
-    render(<HeroSimulatorPreview />);
+  it("renders overall score estimate and 80% passing benchmark", () => {
+    render(<HeroDiagnosticPlanPreview />);
 
-    const eliminateBtns = screen.getAllByRole("button", { name: /Eliminate/i });
-    expect(eliminateBtns.length).toBeGreaterThan(0);
-
-    // Click eliminate on one of the active buttons
-    fireEvent.click(eliminateBtns[0]);
-
-    // Should have a restore button now
-    expect(screen.getAllByRole("button", { name: /Restore/i }).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Overall estimate: 62%/i)).toBeInTheDocument();
+    expect(screen.getByText(/CSC passing cutoff:/i)).toBeInTheDocument();
+    expect(screen.getByText(/62% Current/i)).toBeInTheDocument();
+    expect(screen.getByText(/80% Passing Goal/i)).toBeInTheDocument();
   });
 
-  it("switches to the virtual scratchpad simulation tab and returns", () => {
-    render(<HeroSimulatorPreview />);
+  it("renders identified strength and targeted focus area", () => {
+    render(<HeroDiagnosticPlanPreview />);
 
-    const scratchpadBtn = screen.getByRole("button", { name: /Scratchpad/i });
-    fireEvent.click(scratchpadBtn);
+    expect(screen.getByText(/Strong: Verbal Ability/i)).toBeInTheDocument();
+    expect(screen.getByText("85%")).toBeInTheDocument();
 
-    // Verify scratchpad content
-    expect(screen.getByText(/Virtual Scratchpad \(Physical Calculators Prohibited\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/190 min \/ 170 items = 1.117 min = 67.05 seconds\/item/i)).toBeInTheDocument();
+    expect(screen.getByText(/Focus next: Numerical Ability/i)).toBeInTheDocument();
+    expect(screen.getByText("48%")).toBeInTheDocument();
+  });
 
-    // Return to item
-    const returnBtn = screen.getByRole("button", { name: /Return to Item/i });
-    fireEvent.click(returnBtn);
+  it("renders recommended 10-minute drill action", () => {
+    render(<HeroDiagnosticPlanPreview />);
 
-    // Question visible again
-    expect(screen.getByText(/Republic Act No. 6713/i)).toBeInTheDocument();
+    expect(screen.getByText(/Recommended: Percentages — 10-minute drill/i)).toBeInTheDocument();
+    expect(screen.getByText(/10 min/i)).toBeInTheDocument();
+  });
+
+  it("renders primary diagnostic CTA and secondary practice runner preview link", () => {
+    const { rerender } = render(<HeroDiagnosticPlanPreview level="professional" />);
+
+    const cta = screen.getByRole("link", { name: /Start free diagnostic/i });
+    expect(cta).toBeInTheDocument();
+    expect(cta).toHaveAttribute("href", "/exams/professional/quick");
+
+    const previewLink = screen.getByRole("link", { name: /Preview the practice interface/i });
+    expect(previewLink).toBeInTheDocument();
+    expect(previewLink).toHaveAttribute("href", "/practice");
+
+    // Dynamic level adjustment
+    rerender(<HeroDiagnosticPlanPreview level="subprofessional" />);
+    expect(screen.getByRole("link", { name: /Start free diagnostic/i })).toHaveAttribute(
+      "href",
+      "/exams/subprofessional/quick"
+    );
   });
 });
 
