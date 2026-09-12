@@ -4,62 +4,54 @@ import { HeroDiagnosticPlanPreview } from "@/components/home/HeroDiagnosticPlanP
 import { SubtestExplorer } from "@/components/home/SubtestExplorer";
 
 describe("HeroDiagnosticPlanPreview Component", () => {
-  it("renders the diagnostic-to-study-plan header and completion badge", () => {
+  it("renders the diagnostic plan header and example outcome labels", () => {
     render(<HeroDiagnosticPlanPreview />);
 
-    expect(screen.getByText(/Your diagnostic becomes a study plan/i)).toBeInTheDocument();
-    expect(screen.getByText(/10-question diagnostic complete/i)).toBeInTheDocument();
+    expect(screen.getByText(/YOUR DIAGNOSTIC PLAN/i)).toBeInTheDocument();
+    expect(screen.getByText(/Example Outcome/i)).toBeInTheDocument();
+    expect(screen.getByText("Preview")).toBeInTheDocument();
   });
 
-  it("renders the 4-step product loop proving the learning cycle", () => {
+  it("renders estimated readiness metric and 80% benchmark reference", () => {
     render(<HeroDiagnosticPlanPreview />);
 
-    expect(screen.getByText("Practice")).toBeInTheDocument();
-    expect(screen.getByText("Diagnosis")).toBeInTheDocument();
-    expect(screen.getByText("Targeted Review")).toBeInTheDocument();
-    expect(screen.getByText("Readiness")).toBeInTheDocument();
+    expect(screen.getByText(/Estimated readiness/i)).toBeInTheDocument();
+    expect(screen.getByText("62%")).toBeInTheDocument();
+    expect(screen.getByText(/80% goal/i)).toBeInTheDocument();
   });
 
-  it("renders overall score estimate and 80% passing benchmark", () => {
+  it("renders identified subtest focus and strength indicators", () => {
     render(<HeroDiagnosticPlanPreview />);
 
-    expect(screen.getByText(/Overall estimate: 62%/i)).toBeInTheDocument();
-    expect(screen.getByText(/CSC passing cutoff:/i)).toBeInTheDocument();
-    expect(screen.getByText(/62% Current/i)).toBeInTheDocument();
-    expect(screen.getByText(/80% Passing Goal/i)).toBeInTheDocument();
+    expect(screen.getByText("Numerical Ability")).toBeInTheDocument();
+    expect(screen.getByText("Needs focus")).toBeInTheDocument();
+
+    expect(screen.getByText("Verbal Ability")).toBeInTheDocument();
+    expect(screen.getByText("Strong")).toBeInTheDocument();
   });
 
-  it("renders identified strength and targeted focus area", () => {
+  it("renders next recommended drill card with 10-minute estimate", () => {
     render(<HeroDiagnosticPlanPreview />);
 
-    expect(screen.getByText(/Strong: Verbal Ability/i)).toBeInTheDocument();
-    expect(screen.getByText("85%")).toBeInTheDocument();
-
-    expect(screen.getByText(/Focus next: Numerical Ability/i)).toBeInTheDocument();
-    expect(screen.getByText("48%")).toBeInTheDocument();
+    expect(screen.getByText(/Next recommended drill/i)).toBeInTheDocument();
+    expect(screen.getByText(/Percentages & Interest/i)).toBeInTheDocument();
+    expect(screen.getByText("10 min")).toBeInTheDocument();
   });
 
-  it("renders recommended 10-minute drill action", () => {
-    render(<HeroDiagnosticPlanPreview />);
-
-    expect(screen.getByText(/Recommended: Percentages — 10-minute drill/i)).toBeInTheDocument();
-    expect(screen.getByText(/10 min/i)).toBeInTheDocument();
-  });
-
-  it("renders primary diagnostic CTA and secondary practice runner preview link", () => {
+  it("renders primary action and secondary preview link with dynamic level prop", () => {
     const { rerender } = render(<HeroDiagnosticPlanPreview level="professional" />);
 
-    const cta = screen.getByRole("link", { name: /Start free diagnostic/i });
+    const cta = screen.getByRole("link", { name: /Start focused practice/i });
     expect(cta).toBeInTheDocument();
     expect(cta).toHaveAttribute("href", "/exams/professional/quick");
 
     const previewLink = screen.getByRole("link", { name: /Preview the practice interface/i });
     expect(previewLink).toBeInTheDocument();
-    expect(previewLink).toHaveAttribute("href", "/practice");
+    expect(previewLink).toHaveAttribute("href", "/#how-it-works");
 
     // Dynamic level adjustment
     rerender(<HeroDiagnosticPlanPreview level="subprofessional" />);
-    expect(screen.getByRole("link", { name: /Start free diagnostic/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /Start focused practice/i })).toHaveAttribute(
       "href",
       "/exams/subprofessional/quick"
     );
