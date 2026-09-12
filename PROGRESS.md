@@ -18,24 +18,30 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 
 ---
 
-## 🎯 Hero Section Refinement: Diagnostic-to-Study-Plan Panel
-1. **Removed Misleading "Live Simulator" Preview**:
-   - Retired the faux dark OS simulator window with mock continuous timer, pre-revealed legal rationales, and fake pacing calculator.
-   - Avoids setting false expectations regarding exam fidelity, as the official CSE-PPT does not reveal answers live or feature simulated desktop widgets.
-2. **Introduced Calm, Light "Your diagnostic becomes a study plan" Preview (`src/components/home/HeroDiagnosticPlanPreview.tsx`)**:
-   - Proves the actual product loop: `Practice → Diagnosis → Targeted Review → Readiness`.
-   - Displays clear, authentic diagnostic metrics:
-     - `10-question diagnostic complete`
-     - `Overall estimate: 62%` with 80% passing cutoff benchmark
-     - `Strong: Verbal Ability (85%)`
-     - `Focus next: Numerical Ability (48%)`
-     - `Recommended: Percentages — 10-minute drill`
-   - Primary CTA: `[Start free diagnostic]` directly supporting examinee onboarding without competing against it.
-   - Secondary link: `“Preview the practice interface”` navigating to genuine practice runner (`/practice`).
-3. **Automated Verification & Visual Inspection**:
-   - Unit tests in `tests/unit/components/home-components.test.tsx` (9/9 passed).
-   - E2E Playwright test in `tests/e2e/exam-flow.spec.ts` with screenshot visual capture (9/9 passed).
-   - `npm run verify` exited with code 0.
+## 🎯 Hero Section & Navigation Simplification: "Know what to study next"
+1. **Simplified Information Budget & Hero Copy**:
+   - Small category label: `PHILIPPINE CIVIL SERVICE EXAM REVIEWER`
+   - Headline: `Know what to study next.`
+   - Supporting sentence: `Take a free 10-question diagnostic and get a clear view of your strongest and weakest CSE subtests.`
+   - Primary CTA: `[Start Free Diagnostic]` (dominant button leading directly to `/practice`).
+   - Secondary CTA: `[How It Works]` (smoothly scrolls to the `#how-it-works` learning loop).
+   - Three short trust points: `No sign-up required • Professional & Subprofessional • Original questions`.
+   - Quiet countdown: Placed as a subtle utility line (`Next CSE-PPT: March 21, 2027 · ${diffDays} days remaining`).
+2. **Replaced Misleading Simulator with Static Study Plan Preview (`src/components/home/HeroDiagnosticPlanPreview.tsx`)**:
+   - Labeled clearly as `YOUR DIAGNOSTIC PLAN (EXAMPLE PREVIEW)`.
+   - Frames progress as `Estimated readiness: 62%` with a 10-segment visual progress bar (strictly adhering to Addendum §50: does not claim raw score directly equals official CSC general rating).
+   - Shows subtest breakdown: `Numerical Ability: Needs focus` and `Verbal Ability: Strong`.
+   - Actionable outcome: `Next recommended drill: Percentages & Interest · 10 min`.
+   - Single static action: `[Start focused practice]`.
+   - Moved mock interface preview and test structure details below the fold to the `#how-it-works` section.
+3. **Navigation Simplification (`src/components/layout/Header.tsx`)**:
+   - New visitor default: `Practice   Study Guides   How It Works   FAQ      Sign In`
+   - Removed vague "Dashboard" link for first-time visitors; replaced with `My Progress` which is rendered **only** when the user has existing test progress (attempt history, bookmarks, or mistake bank items) or is authenticated.
+4. **Full Verification Suite Passed**:
+   - Unit & component tests: `tests/unit/components/home-components.test.tsx` (8/8 passed).
+   - Integration & unit tests: 169 passed across 34 test files.
+   - Playwright E2E tests: `tests/e2e/exam-flow.spec.ts` (9/9 passed in 39s).
+   - `npm run verify` passed with exit code 0.
 
 ---
 
