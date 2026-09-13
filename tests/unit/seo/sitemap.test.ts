@@ -51,6 +51,7 @@ describe("sitemap.ts — Dynamic XML Sitemap Generation", () => {
       "/contact",
       "/faq",
       "/exam-info",
+      "/cse/exam-guide",
       "/guides",
       "/articles",
     ];
