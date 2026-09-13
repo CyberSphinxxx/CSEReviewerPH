@@ -1,60 +1,75 @@
 import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
-import { HeroDiagnosticPlanPreview } from "@/components/home/HeroDiagnosticPlanPreview";
+import { HeroExamLevelSelector } from "@/components/home/HeroExamLevelSelector";
 import { SubtestExplorer } from "@/components/home/SubtestExplorer";
+import { vi } from "vitest";
 
-describe("HeroDiagnosticPlanPreview Component", () => {
-  it("renders the diagnostic plan header and example outcome labels", () => {
-    render(<HeroDiagnosticPlanPreview />);
+describe("HeroExamLevelSelector Component", () => {
+  it("renders header labels and selection options", () => {
+    const handleSelect = vi.fn();
+    render(
+      <HeroExamLevelSelector selectedLevel="professional" onSelectLevel={handleSelect} />
+    );
 
-    expect(screen.getByText(/YOUR DIAGNOSTIC PLAN/i)).toBeInTheDocument();
-    expect(screen.getByText(/Example Outcome/i)).toBeInTheDocument();
-    expect(screen.getByText("Preview")).toBeInTheDocument();
+    expect(screen.getByText(/START YOUR REVIEW/i)).toBeInTheDocument();
+    expect(screen.getByText(/Choose your exam level/i)).toBeInTheDocument();
+
+    expect(screen.getByText("Professional")).toBeInTheDocument();
+    expect(screen.getByText(/For second-level positions/i)).toBeInTheDocument();
+    expect(screen.getByText(/Includes Analytical Ability/i)).toBeInTheDocument();
+
+    expect(screen.getByText("Subprofessional")).toBeInTheDocument();
+    expect(screen.getByText(/For first-level positions/i)).toBeInTheDocument();
+    expect(screen.getByText(/Includes Clerical Ability/i)).toBeInTheDocument();
   });
 
-  it("renders estimated readiness metric and 80% benchmark reference", () => {
-    render(<HeroDiagnosticPlanPreview />);
+  it("renders single primary CTA button pointing to selected level and reassurance line", () => {
+    const handleSelect = vi.fn();
+    const { rerender } = render(
+      <HeroExamLevelSelector selectedLevel="professional" onSelectLevel={handleSelect} />
+    );
 
-    expect(screen.getByText(/Estimated readiness/i)).toBeInTheDocument();
-    expect(screen.getByText("62%")).toBeInTheDocument();
-    expect(screen.getByText(/80% goal/i)).toBeInTheDocument();
-  });
-
-  it("renders identified subtest focus and strength indicators", () => {
-    render(<HeroDiagnosticPlanPreview />);
-
-    expect(screen.getByText("Numerical Ability")).toBeInTheDocument();
-    expect(screen.getByText("Needs focus")).toBeInTheDocument();
-
-    expect(screen.getByText("Verbal Ability")).toBeInTheDocument();
-    expect(screen.getByText("Strong")).toBeInTheDocument();
-  });
-
-  it("renders next recommended drill card with 10-minute estimate", () => {
-    render(<HeroDiagnosticPlanPreview />);
-
-    expect(screen.getByText(/Next recommended drill/i)).toBeInTheDocument();
-    expect(screen.getByText(/Percentages & Interest/i)).toBeInTheDocument();
-    expect(screen.getByText("10 min")).toBeInTheDocument();
-  });
-
-  it("renders primary action and secondary preview link with dynamic level prop", () => {
-    const { rerender } = render(<HeroDiagnosticPlanPreview level="professional" />);
-
-    const cta = screen.getByRole("link", { name: /Start focused practice/i });
+    const cta = screen.getByRole("link", { name: /Start Free Diagnostic/i });
     expect(cta).toBeInTheDocument();
     expect(cta).toHaveAttribute("href", "/exams/professional/quick");
 
-    const previewLink = screen.getByRole("link", { name: /Preview the practice interface/i });
-    expect(previewLink).toBeInTheDocument();
-    expect(previewLink).toHaveAttribute("href", "/#how-it-works");
+    expect(screen.getByText(/10 questions · About 10 minutes/i)).toBeInTheDocument();
+    expect(screen.getByText(/No account required/i)).toBeInTheDocument();
 
-    // Dynamic level adjustment
-    rerender(<HeroDiagnosticPlanPreview level="subprofessional" />);
-    expect(screen.getByRole("link", { name: /Start focused practice/i })).toHaveAttribute(
+    // Re-render with subprofessional
+    rerender(
+      <HeroExamLevelSelector selectedLevel="subprofessional" onSelectLevel={handleSelect} />
+    );
+    expect(screen.getByRole("link", { name: /Start Free Diagnostic/i })).toHaveAttribute(
       "href",
       "/exams/subprofessional/quick"
     );
+  });
+
+  it("calls onSelectLevel when level option is clicked", () => {
+    const handleSelect = vi.fn();
+    render(
+      <HeroExamLevelSelector selectedLevel="professional" onSelectLevel={handleSelect} />
+    );
+
+    const subproBtn = screen.getByRole("radio", { name: /Subprofessional/i });
+    fireEvent.click(subproBtn);
+    expect(handleSelect).toHaveBeenCalledWith("subprofessional");
+
+    const proBtn = screen.getByRole("radio", { name: /^Professional\b/i });
+    fireEvent.click(proBtn);
+    expect(handleSelect).toHaveBeenCalledWith("professional");
+  });
+
+  it("renders compare levels helper link pointing to #compare-levels", () => {
+    const handleSelect = vi.fn();
+    render(
+      <HeroExamLevelSelector selectedLevel="professional" onSelectLevel={handleSelect} />
+    );
+
+    const compareLink = screen.getByRole("link", { name: /Not sure which level\? Compare the two levels/i });
+    expect(compareLink).toBeInTheDocument();
+    expect(compareLink).toHaveAttribute("href", "#compare-levels");
   });
 });
 
