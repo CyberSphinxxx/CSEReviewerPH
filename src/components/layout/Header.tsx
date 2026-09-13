@@ -70,6 +70,17 @@ export function Header() {
             Study Guides
           </Link>
           <Link
+            href="/cse/exam-guide"
+            prefetch={true}
+            className={`px-2.5 py-1.5 text-sm font-medium rounded-lg transition ${
+              pathname?.startsWith("/cse/exam-guide")
+                ? "text-brand-700 dark:text-brand-300 font-bold bg-brand-50 dark:bg-brand-950/60"
+                : "text-slate-600 dark:text-slate-300 hover:text-brand-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
+            }`}
+          >
+            Exam Guide
+          </Link>
+          <Link
             href="/#how-it-works"
             className="px-2.5 py-1.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand-700 dark:hover:text-white rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition"
           >
@@ -151,6 +162,14 @@ export function Header() {
             className="block px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
           >
             Study Guides
+          </Link>
+          <Link
+            href="/cse/exam-guide"
+            prefetch={true}
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 hover:text-brand-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition"
+          >
+            CSE Exam Guide
           </Link>
           <Link
             href="/#how-it-works"
