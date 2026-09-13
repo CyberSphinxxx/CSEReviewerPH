@@ -132,7 +132,7 @@ export default function DashboardLayoutSettingsPage() {
                 onClick={() => handleSpacingChange(item.id as "comfortable" | "compact")}
                 className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
                   isSelected
-                    ? "border-brand-600 dark:border-brand-500 bg-brand-50/60 dark:bg-brand-950/40 ring-1 ring-brand-600 dark:ring-brand-500 shadow-2xs"
+                    ? "border-brand-600 dark:border-brand-400 bg-highlight dark:bg-brand-950 ring-1 ring-brand-600 dark:ring-brand-400 shadow-2xs"
                     : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
                 }`}
               >
@@ -142,13 +142,15 @@ export default function DashboardLayoutSettingsPage() {
                   </span>
                   <div
                     className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                      isSelected ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 dark:border-slate-700"
+                      isSelected ? "border-brand-600 dark:border-brand-400 bg-brand-600 dark:bg-brand-500 text-white" : "border-slate-300 dark:border-slate-700"
                     }`}
                   >
                     {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
                   </div>
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                <p className={`text-xs leading-relaxed transition ${
+                  isSelected ? "text-slate-700 dark:text-slate-200 font-medium" : "text-slate-500 dark:text-slate-400"
+                }`}>
                   {item.desc}
                 </p>
               </button>
