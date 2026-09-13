@@ -167,19 +167,21 @@ export default function StudyPlanSettingsPage() {
             onClick={() => handleLevelChange("cse-professional")}
             className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
               levelId === "cse-professional"
-                ? "border-brand-600 dark:border-brand-500 bg-brand-50/50 dark:bg-brand-950/30 ring-1 ring-brand-600 dark:ring-brand-500"
+                ? "border-brand-600 dark:border-brand-400 bg-highlight dark:bg-brand-950 ring-1 ring-brand-600 dark:ring-brand-400 shadow-2xs"
                 : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
             }`}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="font-bold text-sm text-slate-900 dark:text-white">Professional Level</span>
               <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                levelId === "cse-professional" ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300"
+                levelId === "cse-professional" ? "border-brand-600 dark:border-brand-400 bg-brand-600 dark:bg-brand-500 text-white" : "border-slate-300 dark:border-slate-700"
               }`}>
                 {levelId === "cse-professional" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
               </div>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p className={`text-xs leading-relaxed transition ${
+              levelId === "cse-professional" ? "text-slate-700 dark:text-slate-200 font-medium" : "text-slate-500 dark:text-slate-400"
+            }`}>
               170 items &bull; 3h 10m &bull; For 2nd-level government positions. Includes Analytical Ability.
             </p>
           </button>
@@ -190,19 +192,21 @@ export default function StudyPlanSettingsPage() {
             onClick={() => handleLevelChange("cse-subprofessional")}
             className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
               levelId === "cse-subprofessional"
-                ? "border-brand-600 dark:border-brand-500 bg-brand-50/50 dark:bg-brand-950/30 ring-1 ring-brand-600 dark:ring-brand-500"
+                ? "border-brand-600 dark:border-brand-400 bg-highlight dark:bg-brand-950 ring-1 ring-brand-600 dark:ring-brand-400 shadow-2xs"
                 : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
             }`}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="font-bold text-sm text-slate-900 dark:text-white">Subprofessional Level</span>
               <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                levelId === "cse-subprofessional" ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300"
+                levelId === "cse-subprofessional" ? "border-brand-600 dark:border-brand-400 bg-brand-600 dark:bg-brand-500 text-white" : "border-slate-300 dark:border-slate-700"
               }`}>
                 {levelId === "cse-subprofessional" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
               </div>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p className={`text-xs leading-relaxed transition ${
+              levelId === "cse-subprofessional" ? "text-slate-700 dark:text-slate-200 font-medium" : "text-slate-500 dark:text-slate-400"
+            }`}>
               165 items &bull; 2h 40m &bull; For 1st-level clerical positions. Includes Clerical Ability.
             </p>
           </button>
