@@ -52,7 +52,7 @@ describe("Dashboard Next Best Step Recommendation Engine", () => {
     expect(rec.type).toBe("srs_review");
     expect(rec.actionHref).toContain("/dashboard/mistakes");
     expect(rec.urgency).toBe("urgent");
-    expect(rec.title).toContain("1 Due Missed Question");
+    expect(rec.title).toContain("1 question ready to review");
   });
 
   it("recommends targeted subtest drill when a subtest falls below 80% passing benchmark", () => {
