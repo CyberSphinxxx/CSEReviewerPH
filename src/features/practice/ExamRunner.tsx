@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   type EngineQuestion,
@@ -33,6 +34,8 @@ import {
   BookOpen,
   Contrast,
   Check,
+  ChevronDown,
+  MoreHorizontal,
 } from "lucide-react";
 
 import {
@@ -76,13 +79,18 @@ export function ExamRunner({
     createExamSession(initialQuestions, rules.timeLimitMinutes, rules.allowsFlagging)
   );
 
-  // New Testing UX States
+  // Testing UX & Accessibility States
   const [eliminatedChoices, setEliminatedChoices] = useState<Record<string, string[]>>({});
   const [practiceFeedbackMode, setPracticeFeedbackMode] = useState<"instant" | "simulated">("instant");
   const [showScratchpad, setShowScratchpad] = useState(false);
   const [scratchpadNotes, setScratchpadNotes] = useState("");
   const [fontSize, setFontSize] = useState<"normal" | "large" | "xl">("normal");
   const [highContrast, setHighContrast] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [showExitModal, setShowExitModal] = useState(false);
+  const [showDisplayMenu, setShowDisplayMenu] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const displayMenuRef = useRef<HTMLDivElement>(null);
 
   // Check for existing active draft on mount
   useEffect(() => {
@@ -96,6 +104,19 @@ export function ExamRunner({
       setShowResumeBanner(true);
     }
   }, [levelSlug, rules.mode, topicId, initialQuestions.length]);
+
+  // Click outside to dismiss Display menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (displayMenuRef.current && !displayMenuRef.current.contains(event.target as Node)) {
+        setShowDisplayMenu(false);
+      }
+    }
+    if (showDisplayMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showDisplayMenu]);
 
   const handleResumeDraft = () => {
     if (!savedDraft) return;
@@ -187,11 +208,10 @@ export function ExamRunner({
       });
 
       LocalStorageService.saveActiveDraft({
-        id: `draft-${levelSlug}-${rules.mode}`,
+        id: `draft-${levelSlug}-${rules.mode}${topicId ? `-${topicId}` : ""}`,
         levelSlug,
         mode: rules.mode,
         title,
-        subtitle,
         rules,
         questions: initialQuestions,
         answers: answersObj,
@@ -202,81 +222,147 @@ export function ExamRunner({
         lastSavedAt: new Date().toISOString(),
       });
     }
-  }, [session, levelSlug, rules, title, subtitle, initialQuestions, topicId]);
+  }, [session, levelSlug, rules, topicId, title, initialQuestions]);
 
-  // Submit handler
-  const handleSubmit = useCallback(() => {
+  // Handle Save & Exit Navigation
+  const handleOpenExitModal = () => {
+    setShowExitModal(true);
+  };
+
+  const handleSaveAndExit = () => {
+    if (session.answers.size > 0 || session.timer.remainingSeconds < session.timer.totalSeconds) {
+      const answersObj: Record<string, StoredUserAnswer> = {};
+      const flaggedIds: string[] = [];
+
+      session.answers.forEach((ans, qId) => {
+        answersObj[qId] = {
+          questionId: ans.questionId,
+          selectedChoiceId: ans.selectedChoiceId ?? undefined,
+          isFlagged: Boolean(ans.isFlagged),
+          timeSpentSeconds: ans.timeSpentSeconds || 0,
+        };
+        if (ans.isFlagged) {
+          flaggedIds.push(qId);
+        }
+      });
+
+      LocalStorageService.saveActiveDraft({
+        id: `draft-${levelSlug}-${rules.mode}${topicId ? `-${topicId}` : ""}`,
+        levelSlug,
+        mode: rules.mode,
+        title,
+        rules,
+        questions: initialQuestions,
+        answers: answersObj,
+        flaggedQuestionIds: flaggedIds,
+        currentQuestionIndex: session.currentIndex,
+        remainingSeconds: session.timer.remainingSeconds,
+        startedAt: startedAtRef.current,
+        lastSavedAt: new Date().toISOString(),
+      });
+    }
+    setShowExitModal(false);
+    router.push("/practice");
+  };
+
+  const handleDiscardAndExit = () => {
+    LocalStorageService.clearActiveDraft(levelSlug, rules.mode, topicId);
+    setShowExitModal(false);
+    router.push("/practice");
+  };
+
+  // Submit test and persist results
+  const handleSubmit = useCallback(async () => {
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
     setIsSubmitting(true);
     triggerHaptic(20);
 
-    const currentSession = sessionRef.current;
-    const answersList = Array.from(currentSession.answers.values());
-    const timeSpent = Math.max(1, currentSession.timer.totalSeconds - currentSession.timer.remainingSeconds);
+    const activeSession = sessionRef.current;
+    const timeSpentTotal = activeSession.timer.totalSeconds - activeSession.timer.remainingSeconds;
+
+    const engineAnswersList = initialQuestions.map((q) => {
+      const ans = activeSession.answers.get(q.id);
+      return {
+        questionId: q.id,
+        selectedChoiceId: ans?.selectedChoiceId || null,
+        isFlagged: ans?.isFlagged || false,
+        timeSpentSeconds: ans?.timeSpentSeconds || 0,
+      };
+    });
+
+    const userAnswersList: StoredUserAnswer[] = initialQuestions.map((q) => {
+      const ans = activeSession.answers.get(q.id);
+      return {
+        questionId: q.id,
+        selectedChoiceId: ans?.selectedChoiceId || undefined,
+        isFlagged: ans?.isFlagged || false,
+        timeSpentSeconds: ans?.timeSpentSeconds || 0,
+      };
+    });
+
     const scoreResult = calculateScore(
       initialQuestions,
-      answersList,
+      engineAnswersList,
       rules.passingScorePercentage,
-      timeSpent
+      timeSpentTotal
     );
 
-    // Save attempt into LocalStorageService
-    const attemptId = `attempt-${Date.now()}`;
-    const attemptRecord: StoredAttemptDetails = {
+    const attemptId = `attempt-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    const attemptData: StoredAttemptDetails = {
       id: attemptId,
       title,
       mode: rules.mode,
       rules,
       questions: initialQuestions,
-      answers: answersList.map((a) => ({
-        questionId: a.questionId,
-        selectedChoiceId: a.selectedChoiceId || undefined,
-        isFlagged: a.isFlagged,
-        timeSpentSeconds: a.timeSpentSeconds,
-      })),
+      answers: userAnswersList,
       scoreResult,
       completedAt: new Date().toISOString(),
     };
 
-    LocalStorageService.recordCompletedAttempt(attemptRecord);
-    LocalStorageService.clearActiveDraft(levelSlug, rules.mode, topicId);
+    try {
+      LocalStorageService.recordCompletedAttempt(attemptData);
+      LocalStorageService.clearActiveDraft(levelSlug, rules.mode, topicId);
+    } catch {
+      // Graceful localstorage failure handling
+    }
 
-    // Redirect to results page
     router.push(`/results/${attemptId}`);
-  }, [initialQuestions, rules, title, router, levelSlug, topicId]);
+  }, [initialQuestions, levelSlug, rules, title, topicId, router]);
 
-  // Continuous Single Timer Tick with Wall-Clock Drift Reconciliation
-  const lastTickRef = useRef<number>(Date.now());
-
+  // Continuous Single Timer step
   useEffect(() => {
     if (session.timer.isExpired) return;
 
-    lastTickRef.current = Date.now();
+    let lastTick = performance.now();
+    const timerInterval = setInterval(() => {
+      const now = performance.now();
+      const elapsedSeconds = Math.floor((now - lastTick) / 1000);
 
-    const tick = () => {
-      const now = Date.now();
-      const elapsedSeconds = Math.max(1, Math.floor((now - lastTickRef.current) / 1000));
-      lastTickRef.current = now;
-
-      setSession((prev) => {
-        if (prev.timer.isExpired) return prev;
-        return stepTimer(prev, elapsedSeconds);
-      });
-    };
-
-    const interval = setInterval(tick, 1000);
+      if (elapsedSeconds >= 1) {
+        lastTick = now;
+        setSession((prev) => {
+          if (prev.timer.isExpired) return prev;
+          return stepTimer(prev, elapsedSeconds);
+        });
+      }
+    }, 1000);
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        tick();
+      if (!document.hidden && !sessionRef.current.timer.isExpired) {
+        const now = performance.now();
+        const elapsed = Math.floor((now - lastTick) / 1000);
+        if (elapsed >= 1) {
+          lastTick = now;
+          setSession((prev) => stepTimer(prev, elapsed));
+        }
       }
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      clearInterval(interval);
+      clearInterval(timerInterval);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [session.timer.isExpired]);
@@ -303,7 +389,6 @@ export function ExamRunner({
         ? currentList.filter((id) => id !== choiceId)
         : [...currentList, choiceId];
 
-      // If eliminating the currently selected choice, deselect it
       if (!isAlreadyEliminated && currentAnswer?.selectedChoiceId === choiceId) {
         setSession((prevSession) => selectChoice(prevSession, qId, ""));
       }
@@ -354,8 +439,17 @@ export function ExamRunner({
       setShowNavigator(false);
       setShowReviewModal(false);
       setShowScratchpad(false);
+      setShowExitModal(false);
+      setShowDisplayMenu(false);
+      setShowMobileMenu(false);
     },
-    isModalOpen: showNavigator || showReviewModal || showScratchpad,
+    isModalOpen:
+      showNavigator ||
+      showReviewModal ||
+      showScratchpad ||
+      showExitModal ||
+      showDisplayMenu ||
+      showMobileMenu,
   });
 
   const questionFontSizeClass = {
@@ -370,135 +464,263 @@ export function ExamRunner({
     xl: "text-xl",
   }[fontSize];
 
+  const isMathOrAnalytical =
+    currentQuestion?.subjectSlug === "numerical-ability" ||
+    currentQuestion?.subjectSlug === "analytical-ability" ||
+    currentQuestion?.subjectName?.toLowerCase().includes("numerical") ||
+    currentQuestion?.subjectName?.toLowerCase().includes("analytical");
+
   return (
-    <div className={`min-h-screen flex flex-col justify-between ${highContrast ? "bg-slate-200" : "bg-slate-100"}`}>
-      {/* Top Floating App Bar */}
-      <header className={`sticky top-0 z-30 border-b shadow-sm px-3 sm:px-6 py-2.5 sm:py-3 transition-colors ${highContrast ? "bg-white border-slate-900" : "bg-white border-slate-200"}`}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <h1 className="text-sm sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2 truncate">
-              <span className="truncate">{title}</span>
-            </h1>
-            {subtitle && <p className="text-xs text-slate-500 hidden sm:block truncate">{subtitle}</p>}
+    <div
+      className={`min-h-screen flex flex-col justify-between ${
+        highContrast ? "bg-slate-200" : "bg-slate-100"
+      } ${reduceMotion ? "[&_*]:!transition-none [&_*]:!animation-none" : ""}`}
+    >
+      {/* Top Focused Exam Header */}
+      <header
+        className={`sticky top-0 z-30 border-b shadow-2xs px-4 sm:px-6 lg:px-8 py-2.5 transition-colors ${
+          highContrast ? "bg-white border-slate-900" : "bg-white border-slate-200"
+        }`}
+      >
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          {/* Left: Save & Exit Navigation */}
+          <div className="flex items-center">
+            <button
+              type="button"
+              onClick={handleOpenExitModal}
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-semibold transition shadow-2xs group"
+              title="Save progress and leave test"
+              aria-label="Save and exit test"
+            >
+              <ChevronLeft className="w-4 h-4 text-slate-500 group-hover:-translate-x-0.5 transition-transform" />
+              <span>Save &amp; Exit</span>
+            </button>
           </div>
 
-          {/* Controls & Continuous Timer Display */}
+          {/* Center: Test Title & Compact Metadata (Desktop) */}
+          <div className="hidden md:flex flex-col items-center justify-center text-center min-w-0 px-2">
+            <h1 className="text-sm font-bold text-slate-900 tracking-tight truncate max-w-md">
+              {title}
+            </h1>
+            <span className="text-[11px] text-slate-500 font-medium">
+              {subtitle ? subtitle : `${session.totalQuestions} Questions • ${rules.timeLimitMinutes}m`}
+            </span>
+          </div>
+
+          {/* Center on Mobile: Compact Question Indicator */}
+          <div className="flex md:hidden items-center text-xs font-bold text-slate-900 truncate">
+            <span>
+              Q{session.currentIndex + 1} of {session.totalQuestions}
+            </span>
+          </div>
+
+          {/* Right: Tools & Controls */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Practice Instant Feedback Mode Toggle */}
-            {rules.mode === "practice" && (
-              <div className="hidden lg:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setPracticeFeedbackMode("instant")}
-                  className={`px-2.5 py-1 rounded-lg transition font-medium ${
-                    practiceFeedbackMode === "instant"
-                      ? "bg-white text-brand-700 font-bold shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  Instant Rationale
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPracticeFeedbackMode("simulated")}
-                  className={`px-2.5 py-1 rounded-lg transition font-medium ${
-                    practiceFeedbackMode === "simulated"
-                      ? "bg-white text-brand-700 font-bold shadow-xs"
-                      : "text-slate-500 hover:text-slate-800"
-                  }`}
-                >
-                  Simulated
-                </button>
-              </div>
-            )}
+            {/* Display Accessibility Menu */}
+            <div className="relative hidden sm:block" ref={displayMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowDisplayMenu((prev) => !prev)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-medium transition shadow-2xs"
+                aria-expanded={showDisplayMenu}
+                aria-haspopup="true"
+                aria-label="Display accessibility settings"
+              >
+                <span>Display</span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+              </button>
 
-            {/* Font Scaler */}
-            <button
-              type="button"
-              onClick={() =>
-                setFontSize((prev) => (prev === "normal" ? "large" : prev === "large" ? "xl" : "normal"))
-              }
-              className="inline-flex items-center justify-center w-8 h-8 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-xs"
-              title="Scale Font Size (Normal / Large / Extra Large)"
-              aria-label="Adjust font size"
-            >
-              <span className="font-mono">A{fontSize === "normal" ? "" : fontSize === "large" ? "+" : "++"}</span>
-            </button>
+              {showDisplayMenu && (
+                <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-slate-200 shadow-xl p-3 z-50 text-xs space-y-3 animate-in fade-in zoom-in-95 duration-100">
+                  <div>
+                    <span className="font-bold text-slate-800 block mb-1.5">Font Size</span>
+                    <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl">
+                      <button
+                        type="button"
+                        onClick={() => setFontSize("normal")}
+                        className={`py-1 rounded-lg font-semibold transition ${
+                          fontSize === "normal"
+                            ? "bg-white text-slate-900 shadow-xs"
+                            : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        Normal
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFontSize("large")}
+                        className={`py-1 rounded-lg font-semibold transition ${
+                          fontSize === "large"
+                            ? "bg-white text-slate-900 shadow-xs"
+                            : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        Large
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFontSize("xl")}
+                        className={`py-1 rounded-lg font-semibold transition ${
+                          fontSize === "xl"
+                            ? "bg-white text-slate-900 shadow-xs"
+                            : "text-slate-500 hover:text-slate-800"
+                        }`}
+                      >
+                        X-Large
+                      </button>
+                    </div>
+                  </div>
 
-            {/* High Contrast Toggle */}
-            <button
-              type="button"
-              onClick={() => setHighContrast((prev) => !prev)}
-              className={`inline-flex items-center justify-center w-8 h-8 rounded-xl border transition shadow-xs ${
-                highContrast
-                  ? "bg-slate-900 border-slate-900 text-white"
-                  : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
-              }`}
-              title="Toggle High Contrast Mode"
-              aria-label="Toggle high contrast"
-            >
-              <Contrast className="w-3.5 h-3.5" />
-            </button>
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-slate-800 block">High Contrast</span>
+                      <span className="text-[10px] text-slate-500">Sharper borders &amp; text</span>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={highContrast}
+                      aria-label="Toggle high contrast"
+                      onClick={() => setHighContrast((prev) => !prev)}
+                      className={`w-10 h-6 rounded-full transition-colors p-0.5 flex items-center ${
+                        highContrast ? "bg-slate-900 justify-end" : "bg-slate-200 justify-start"
+                      }`}
+                    >
+                      <span className="w-5 h-5 rounded-full bg-white shadow-xs" />
+                    </button>
+                  </div>
 
-            {/* Scratchpad Button */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-slate-800 block">Reduce Motion</span>
+                      <span className="text-[10px] text-slate-500">Minimize animations</span>
+                    </div>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={reduceMotion}
+                      aria-label="Toggle reduce motion"
+                      onClick={() => setReduceMotion((prev) => !prev)}
+                      className={`w-10 h-6 rounded-full transition-colors p-0.5 flex items-center ${
+                        reduceMotion ? "bg-slate-900 justify-end" : "bg-slate-200 justify-start"
+                      }`}
+                    >
+                      <span className="w-5 h-5 rounded-full bg-white shadow-xs" />
+                    </button>
+                  </div>
+
+                  {rules.mode === "practice" && (
+                    <div className="pt-2 border-t border-slate-100">
+                      <span className="font-bold text-slate-800 block mb-1.5">Feedback Mode</span>
+                      <div className="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => setPracticeFeedbackMode("instant")}
+                          className={`py-1 rounded-lg font-semibold transition ${
+                            practiceFeedbackMode === "instant"
+                              ? "bg-white text-slate-900 shadow-xs"
+                              : "text-slate-500 hover:text-slate-800"
+                          }`}
+                        >
+                          Instant
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPracticeFeedbackMode("simulated")}
+                          className={`py-1 rounded-lg font-semibold transition ${
+                            practiceFeedbackMode === "simulated"
+                              ? "bg-white text-slate-900 shadow-xs"
+                              : "text-slate-500 hover:text-slate-800"
+                          }`}
+                        >
+                          Simulated
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t border-slate-100 text-right">
+                    <Link
+                      href="/settings/reading"
+                      target="_blank"
+                      className="text-[11px] font-semibold text-brand-700 hover:text-brand-800 underline"
+                    >
+                      More reading settings &rarr;
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Virtual Scratchpad */}
             <button
               type="button"
               onClick={() => setShowScratchpad(true)}
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-medium transition shadow-xs"
+              className={`hidden sm:inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs sm:text-sm font-medium transition shadow-2xs ${
+                isMathOrAnalytical
+                  ? "border-brand-300 bg-brand-50 hover:bg-brand-100 text-brand-900 font-semibold"
+                  : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+              }`}
               title="Open Virtual Scratchpad (Press S)"
             >
               <Edit3 className="w-3.5 h-3.5 text-brand-600 shrink-0" />
-              <span className="hidden sm:inline">Scratchpad</span>
+              <span>Scratchpad</span>
             </button>
 
-            {/* Continuous Timer Display */}
+            {/* High-Contrast Continuous Countdown Timer */}
             <div
-              className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-xl border text-xs sm:text-sm font-mono font-bold tracking-wider shadow-xs transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs sm:text-sm font-mono font-bold tracking-wider shadow-2xs transition-colors ${
                 session.timer.isWarning
                   ? "bg-rose-50 border-rose-300 text-rose-700 animate-pulse"
-                  : "bg-slate-50 border-slate-200 text-slate-800"
+                  : "bg-slate-50 border-slate-200 text-slate-900"
               }`}
             >
-              <Clock className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${session.timer.isWarning ? "text-rose-600" : "text-brand-600"}`} />
+              <Clock
+                className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${
+                  session.timer.isWarning ? "text-rose-600" : "text-brand-600"
+                }`}
+              />
               <span id="exam-timer">{formatTimeRemaining(session.timer.remainingSeconds)}</span>
             </div>
 
-            {/* Question Navigator Button */}
+            {/* Question Map Button (Desktop Trigger) */}
             <button
               type="button"
               onClick={() => setShowNavigator(true)}
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-medium transition shadow-xs"
-              aria-label="Open Question Palette / Questions"
+              className="hidden lg:inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs sm:text-sm font-medium transition shadow-2xs"
+              aria-label="Open Question Map / Palette"
             >
-              <LayoutGrid className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500" />
-              <span className="hidden md:inline">Questions</span>
+              <LayoutGrid className="w-3.5 h-3.5 text-slate-500" />
+              <span>Question Map</span>
             </button>
 
-            {/* Review & Submit Button */}
+            {/* Submit Action */}
             <button
               type="button"
               onClick={() => setShowReviewModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold shadow-sm transition active:scale-95 shrink-0"
+              className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold shadow-xs transition active:scale-95 shrink-0"
             >
-              <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <Send className="w-3.5 h-3.5" />
               <span>Submit</span>
             </button>
-          </div>
-        </div>
 
-        {/* Real-time Progress Bar */}
-        <div className="w-full bg-slate-200 h-1">
-          <div
-            className="bg-slate-900 h-1 transition-all duration-300"
-            style={{ width: `${summary.total > 0 ? Math.round((summary.answered / summary.total) * 100) : 0}%` }}
-          />
+            {/* Mobile Exam Overflow Menu Trigger */}
+            <button
+              type="button"
+              onClick={() => setShowMobileMenu(true)}
+              className="sm:hidden inline-flex items-center justify-center p-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition"
+              aria-label="More exam options"
+            >
+              <MoreHorizontal className="w-4 h-4 text-slate-600" />
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Resume Session Banner */}
       {showResumeBanner && savedDraft && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-3 text-amber-900 shadow-inner">
-          <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sm">
             <div className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-amber-600 shrink-0" />
               <span>
@@ -533,314 +755,468 @@ export function ExamRunner({
         </div>
       )}
 
-      {/* Main Testing Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 md:p-8 pb-28 sm:pb-32">
+      {/* Main Exam Workspace */}
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Dominant Question Column */}
           <div className="lg:col-span-8 space-y-6">
             {currentQuestion && (
-          <div className={`rounded-2xl shadow-sm p-6 sm:p-8 transition-all ${highContrast ? "bg-white border-2 border-slate-900" : "bg-white border border-slate-200"}`}>
-            {/* Question Header & Subtest Tag */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-1 rounded-md bg-brand-50 text-brand-700 font-bold text-xs tracking-wide">
-                  {currentQuestion.subjectName}
-                </span>
-                <span className="text-xs text-slate-400">&bull;</span>
-                <span className="text-xs text-slate-500">{currentQuestion.topicName}</span>
-                {currentQuestion.language === "fil" && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                    FILIPINO
-                  </span>
-                )}
-              </div>
+              <div
+                className={`rounded-2xl shadow-xs p-5 sm:p-7 md:p-8 transition-all ${
+                  highContrast ? "bg-white border-2 border-slate-900" : "bg-white border border-slate-200/90"
+                }`}
+              >
+                {/* Question Subtest & Utility Bar */}
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-1 rounded-md bg-brand-50 text-brand-700 font-bold text-xs tracking-wide">
+                      {currentQuestion.subjectName}
+                    </span>
+                    <span className="text-xs text-slate-400">&bull;</span>
+                    <span className="text-xs text-slate-500 font-medium">{currentQuestion.topicName}</span>
+                    {currentQuestion.language === "fil" && (
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
+                        FILIPINO
+                      </span>
+                    )}
+                  </div>
 
-              {/* Keyboard Shortcut Indicator & Flag Question Button */}
-              <div className="flex items-center gap-3">
-                <span className="hidden sm:inline-block text-[11px] text-slate-400 font-mono">
-                  Press <kbd className="px-1 py-0.5 bg-slate-100 rounded text-slate-600 border text-[10px]">A-E</kbd> to answer, <kbd className="px-1 py-0.5 bg-slate-100 rounded text-slate-600 border text-[10px]">F</kbd> to flag
-                </span>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <span className="hidden sm:inline-block text-[11px] text-slate-400 font-mono">
+                      Press <kbd className="px-1 py-0.5 bg-slate-100 rounded text-slate-600 border text-[10px]">A-E</kbd> to answer, <kbd className="px-1 py-0.5 bg-slate-100 rounded text-slate-600 border text-[10px]">F</kbd> to flag
+                    </span>
 
-                {rules.allowsFlagging && (
+                    {rules.allowsFlagging && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          triggerHaptic(12);
+                          setSession((prev) => toggleFlag(prev, currentQuestion.id));
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition ${
+                          currentAnswer?.isFlagged
+                            ? "bg-amber-100 text-amber-800 border border-amber-300"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                        id="flag-question-button"
+                      >
+                        <Flag className={`w-3.5 h-3.5 ${currentAnswer?.isFlagged ? "fill-amber-600 text-amber-600" : ""}`} />
+                        <span>{currentAnswer?.isFlagged ? "Flagged" : "Flag"}</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setShowReportModal(true)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 transition"
+                      id="report-question-btn"
+                      title="Report an error or issue with this question"
+                    >
+                      <AlertCircle className="w-3.5 h-3.5 text-slate-500" />
+                      <span className="hidden sm:inline">Report</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Progress Hierarchy */}
+                <div className="mt-4 space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900">
+                      Question {session.currentIndex + 1} of {session.totalQuestions}
+                    </h2>
+                    <div className="text-xs font-medium text-slate-500">
+                      Progress: <span className="font-semibold text-slate-800">{summary.answered} answered</span> &bull;{" "}
+                      <span className="font-semibold text-slate-800">{summary.flagged} flagged</span> &bull;{" "}
+                      <span className="font-semibold text-slate-800">{summary.unanswered} remaining</span>
+                    </div>
+                  </div>
+                  {/* Inline Mini Progress Bar */}
+                  <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                    <div
+                      className="bg-slate-900 h-1.5 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${summary.total > 0 ? Math.round((summary.answered / summary.total) * 100) : 0}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Question Text */}
+                <div
+                  className={`mt-4 font-medium leading-relaxed whitespace-pre-line ${questionFontSizeClass} ${
+                    highContrast ? "text-black font-semibold" : "text-slate-900"
+                  }`}
+                >
+                  {currentQuestion.questionText}
+                </div>
+
+                {/* Choices (Clean rows, hover-revealed eliminate button) */}
+                <div className="mt-6 space-y-3">
+                  {currentQuestion.choices.map((choice) => {
+                    const isSelected = currentAnswer?.selectedChoiceId === choice.id;
+                    const isEliminated = (eliminatedChoices[currentQuestion.id] || []).includes(choice.id);
+
+                    // Practice Instant Feedback calculation
+                    const isPracticeInstant =
+                      rules.mode === "practice" &&
+                      practiceFeedbackMode === "instant" &&
+                      Boolean(currentAnswer?.selectedChoiceId);
+                    const isCorrectChoice = choice.isCorrect;
+                    const isSelectedAndWrong = isSelected && !isCorrectChoice;
+
+                    let choiceCardClasses = "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/70";
+                    let choiceBadgeClasses = "bg-slate-100 text-slate-700 group-hover:bg-slate-200";
+
+                    if (isPracticeInstant) {
+                      if (isCorrectChoice) {
+                        choiceCardClasses = "border-emerald-500 bg-emerald-50/70 shadow-xs";
+                        choiceBadgeClasses = "bg-emerald-600 text-white";
+                      } else if (isSelectedAndWrong) {
+                        choiceCardClasses = "border-rose-400 bg-rose-50/70 shadow-xs";
+                        choiceBadgeClasses = "bg-rose-600 text-white";
+                      }
+                    } else if (isSelected) {
+                      choiceCardClasses = "border-slate-900 bg-slate-50 ring-1 ring-slate-900/10 shadow-xs";
+                      choiceBadgeClasses = "bg-slate-900 text-white";
+                    }
+
+                    if (isEliminated) {
+                      choiceCardClasses = "border-dashed border-slate-200 bg-slate-50/80 opacity-60";
+                      choiceBadgeClasses = "bg-slate-200 text-slate-400";
+                    }
+
+                    if (highContrast && !isEliminated) {
+                      choiceCardClasses += " border-2 border-slate-800 text-black";
+                    }
+
+                    return (
+                      <div
+                        key={choice.id}
+                        data-testid={`choice-card-${choice.choiceLabel}`}
+                        onContextMenu={(e) => handleToggleEliminate(choice.id, e)}
+                        className={`group relative w-full text-left p-3.5 sm:p-4 rounded-xl border-2 transition-all flex items-center justify-between gap-3 ${choiceCardClasses}`}
+                      >
+                        <button
+                          type="button"
+                          data-testid={`choice-option-${choice.choiceLabel}`}
+                          disabled={isEliminated}
+                          onClick={() => {
+                            if (isEliminated) return;
+                            triggerHaptic(12);
+                            setSession((prev) => selectChoice(prev, currentQuestion.id, choice.id));
+                          }}
+                          className="flex-1 flex items-start sm:items-center gap-3 sm:gap-4 text-left disabled:cursor-not-allowed"
+                        >
+                          <span
+                            className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm transition-colors ${choiceBadgeClasses}`}
+                          >
+                            {choice.choiceLabel}
+                          </span>
+                          <span
+                            className={`flex-1 ${choiceFontSizeClass} leading-snug ${
+                              isEliminated
+                                ? "line-through text-slate-400 italic"
+                                : highContrast
+                                ? "text-black font-semibold"
+                                : "text-slate-800"
+                            }`}
+                          >
+                            {choice.text}
+                          </span>
+                          {isSelected && (
+                            <span className="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900 text-white text-[11px] font-semibold">
+                              <Check className="w-3 h-3 stroke-[3]" />
+                              <span>Selected</span>
+                            </span>
+                          )}
+                        </button>
+
+                        {/* Strikethrough / Choice Eliminator Tool: Subtle on hover/focus, visible when eliminated */}
+                        <button
+                          type="button"
+                          onClick={(e) => handleToggleEliminate(choice.id, e)}
+                          className={`p-1.5 rounded-lg border transition shrink-0 ${
+                            isEliminated
+                              ? "opacity-100 bg-slate-200 border-slate-300 text-slate-700 hover:bg-slate-300"
+                              : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 bg-white border-transparent hover:border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                          }`}
+                          title={isEliminated ? `Restore Option ${choice.choiceLabel}` : `Cross-out Option ${choice.choiceLabel}`}
+                          aria-label={isEliminated ? `Restore Option ${choice.choiceLabel}` : `Cross-out Option ${choice.choiceLabel}`}
+                        >
+                          {isEliminated ? <Eye className="w-4 h-4 text-brand-700" /> : <EyeOff className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Instant Rationale Panel for Practice Mode */}
+                {rules.mode === "practice" &&
+                  practiceFeedbackMode === "instant" &&
+                  Boolean(currentAnswer?.selectedChoiceId) && (
+                    <div
+                      className={`mt-6 p-5 rounded-xl border animate-fade-in ${
+                        currentQuestion.choices.find((c) => c.id === currentAnswer?.selectedChoiceId)?.isCorrect
+                          ? "bg-emerald-50/70 border-emerald-200"
+                          : "bg-rose-50/70 border-rose-200"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 font-bold text-sm mb-2">
+                        {currentQuestion.choices.find((c) => c.id === currentAnswer?.selectedChoiceId)?.isCorrect ? (
+                          <>
+                            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                            <span className="text-emerald-800">
+                              Correct! Option {currentQuestion.choices.find((c) => c.isCorrect)?.choiceLabel} is right.
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
+                            <span className="text-rose-800">
+                              Incorrect. The correct answer is Option {currentQuestion.choices.find((c) => c.isCorrect)?.choiceLabel}.
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <div className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-1 flex items-center gap-1.5">
+                        <BookOpen className="w-3.5 h-3.5 text-brand-600" />
+                        <span>Educational Concept &amp; Rationale</span>
+                      </div>
+                      <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                        {currentQuestion.explanation}
+                      </p>
+                    </div>
+                  )}
+
+                {/* Bottom Navigation Controls */}
+                <div className="mt-8 flex items-center justify-between gap-4 pt-4 border-t border-slate-100">
                   <button
                     type="button"
                     onClick={() => {
-                      triggerHaptic(12);
-                      setSession((prev) => toggleFlag(prev, currentQuestion.id));
+                      triggerHaptic(10);
+                      setSession((prev) => navigatePrev(prev));
                     }}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition ${
-                      currentAnswer?.isFlagged
-                        ? "bg-amber-100 text-amber-800 border border-amber-300"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                    id="flag-question-button"
+                    disabled={session.currentIndex === 0}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-300 bg-white font-semibold text-sm text-slate-700 shadow-xs hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+                    id="prev-question-btn"
                   >
-                    <Flag className={`w-3.5 h-3.5 ${currentAnswer?.isFlagged ? "fill-amber-600 text-amber-600" : ""}`} />
-                    <span>{currentAnswer?.isFlagged ? "Flagged" : "Flag"}</span>
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Previous</span>
                   </button>
-                )}
 
-                <button
-                  type="button"
-                  onClick={() => setShowReportModal(true)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 transition"
-                  id="report-question-btn"
-                  title="Report an error or issue with this question"
-                >
-                  <AlertCircle className="w-3.5 h-3.5 text-slate-500" />
-                  <span className="hidden sm:inline">Report</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic(10);
+                      if (session.currentIndex === session.totalQuestions - 1) {
+                        setShowReviewModal(true);
+                      } else {
+                        setSession((prev) => navigateNext(prev));
+                      }
+                    }}
+                    className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-xs transition active:scale-95"
+                    id="next-question-btn"
+                  >
+                    <span>{session.currentIndex === session.totalQuestions - 1 ? "Review & Submit" : "Next"}</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop Persistent Question Map */}
+          <aside className="hidden lg:block lg:col-span-4 bg-white rounded-2xl border border-slate-200/90 p-5 shadow-xs sticky top-20 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <LayoutGrid className="w-4 h-4 text-slate-600" />
+                <span>Question Map</span>
+              </h3>
+            </div>
+
+            {/* Compact Legend: ● Answered ○ Unanswered ◇ Flagged */}
+            <div className="flex items-center justify-between text-[11px] font-medium text-slate-600 pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-slate-900" />
+                <span>Answered</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded bg-white border border-slate-300" />
+                <span>Unanswered</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rotate-45 border border-amber-500 bg-amber-200" />
+                <span>Flagged</span>
               </div>
             </div>
 
-            {/* Question Counter */}
-            <div className="mt-4 text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Question {session.currentIndex + 1} of {session.totalQuestions}
-            </div>
+            {/* Question Grid */}
+            <div className="grid grid-cols-5 gap-1.5 max-h-[55vh] overflow-y-auto p-1">
+              {initialQuestions.map((q, idx) => {
+                const ans = session.answers.get(q.id);
+                const isAnswered = Boolean(ans?.selectedChoiceId);
+                const isFlagged = Boolean(ans?.isFlagged);
+                const isCurrent = idx === session.currentIndex;
 
-            {/* Question Text */}
-            <div className={`mt-3 font-medium leading-relaxed whitespace-pre-line ${questionFontSizeClass} ${highContrast ? "text-black font-semibold" : "text-slate-900"}`}>
-              {currentQuestion.questionText}
-            </div>
-
-            {/* Choices */}
-            <div className="mt-6 space-y-3">
-              {currentQuestion.choices.map((choice) => {
-                const isSelected = currentAnswer?.selectedChoiceId === choice.id;
-                const isEliminated = (eliminatedChoices[currentQuestion.id] || []).includes(choice.id);
-
-                // Practice Instant Feedback calculation
-                const isPracticeInstant = rules.mode === "practice" && practiceFeedbackMode === "instant" && Boolean(currentAnswer?.selectedChoiceId);
-                const isCorrectChoice = choice.isCorrect;
-                const isSelectedAndWrong = isSelected && !isCorrectChoice;
-
-                let choiceCardClasses = "border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50/50";
-                let choiceBadgeClasses = "bg-slate-100 text-slate-700 group-hover:bg-slate-200";
-
-                if (isPracticeInstant) {
-                  if (isCorrectChoice) {
-                    choiceCardClasses = "border-emerald-500 bg-emerald-50/60 shadow-xs";
-                    choiceBadgeClasses = "bg-emerald-600 text-white";
-                  } else if (isSelectedAndWrong) {
-                    choiceCardClasses = "border-rose-400 bg-rose-50/60 shadow-xs";
-                    choiceBadgeClasses = "bg-rose-600 text-white";
-                  }
-                } else if (isSelected) {
-                  choiceCardClasses = "border-slate-900 bg-slate-50 ring-1 ring-slate-900/20 shadow-xs";
-                  choiceBadgeClasses = "bg-slate-900 text-white";
+                let btnClasses = "bg-white border-slate-200 text-slate-700 hover:bg-slate-50";
+                if (isAnswered) {
+                  btnClasses = "bg-slate-900 border-slate-900 text-white font-bold";
                 }
-
-                if (isEliminated) {
-                  choiceCardClasses = "border-dashed border-slate-200 bg-slate-50/80 opacity-50";
-                  choiceBadgeClasses = "bg-slate-200 text-slate-400";
+                if (isFlagged) {
+                  btnClasses = "bg-amber-50 border-amber-400 text-amber-900 font-bold";
                 }
-
-                if (highContrast && !isEliminated) {
-                  choiceCardClasses += " border-2 border-slate-800 text-black";
+                if (isCurrent) {
+                  btnClasses += " ring-2 ring-slate-900 ring-offset-1";
                 }
 
                 return (
-                  <div
-                    key={choice.id}
-                    data-testid={`choice-card-${choice.choiceLabel}`}
-                    onContextMenu={(e) => handleToggleEliminate(choice.id, e)}
-                    className={`w-full text-left p-3.5 sm:p-4 rounded-xl border-2 transition-all flex items-center justify-between gap-3 ${choiceCardClasses}`}
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic(10);
+                      setSession((prev) => jumpToQuestion(prev, idx));
+                    }}
+                    className={`relative h-9 rounded-lg border text-xs font-semibold flex items-center justify-center transition ${btnClasses}`}
                   >
-                    <button
-                      type="button"
-                      data-testid={`choice-option-${choice.choiceLabel}`}
-                      disabled={isEliminated}
-                      onClick={() => {
-                        if (isEliminated) return;
-                        triggerHaptic(12);
-                        setSession((prev) => selectChoice(prev, currentQuestion.id, choice.id));
-                      }}
-                      className="flex-1 flex items-start gap-3 sm:gap-4 text-left disabled:cursor-not-allowed"
-                    >
-                      <span
-                        className={`shrink-0 w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-bold text-xs sm:text-sm transition-colors ${choiceBadgeClasses}`}
-                      >
-                        {choice.choiceLabel}
-                      </span>
-                      <span
-                        className={`flex-1 ${choiceFontSizeClass} pt-0.5 leading-snug ${
-                          isEliminated ? "line-through text-slate-400 italic" : highContrast ? "text-black font-semibold" : "text-slate-800"
-                        }`}
-                      >
-                        {choice.text}
-                      </span>
-                      <span
-                        className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 self-center transition-colors ${
-                          isSelected
-                            ? "border-slate-900 bg-slate-900 text-white"
-                            : "border-slate-300 bg-white"
-                        }`}
-                        aria-hidden="true"
-                      >
-                        {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
-                      </span>
-                    </button>
-
-                    {/* Strikethrough / Choice Eliminator Tool */}
-                    <button
-                      type="button"
-                      onClick={(e) => handleToggleEliminate(choice.id, e)}
-                      className={`p-1.5 rounded-lg border transition shrink-0 ${
-                        isEliminated
-                          ? "bg-slate-200 border-slate-300 text-slate-700 hover:bg-slate-300"
-                          : "bg-white border-transparent hover:border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-                      }`}
-                      title={isEliminated ? "Restore Choice" : "Eliminate Choice (Cross-out)"}
-                      aria-label={isEliminated ? `Restore Option ${choice.choiceLabel}` : `Cross-out Option ${choice.choiceLabel}`}
-                    >
-                      {isEliminated ? <Eye className="w-4 h-4 text-brand-700" /> : <EyeOff className="w-4 h-4" />}
-                    </button>
-                  </div>
+                    {idx + 1}
+                    {isFlagged && isAnswered && (
+                      <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 border border-white" />
+                    )}
+                  </button>
                 );
               })}
             </div>
-
-            {/* Practice Instant Pedagogical Rationale Panel */}
-            {rules.mode === "practice" &&
-              practiceFeedbackMode === "instant" &&
-              Boolean(currentAnswer?.selectedChoiceId) && (
-                <div
-                  className={`mt-6 p-5 rounded-xl border animate-fade-in ${
-                    currentQuestion.choices.find((c) => c.id === currentAnswer?.selectedChoiceId)?.isCorrect
-                      ? "bg-emerald-50/70 border-emerald-200"
-                      : "bg-rose-50/70 border-rose-200"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 font-bold text-sm mb-2">
-                    {currentQuestion.choices.find((c) => c.id === currentAnswer?.selectedChoiceId)?.isCorrect ? (
-                      <>
-                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                        <span className="text-emerald-800">Correct! Option {currentQuestion.choices.find((c) => c.isCorrect)?.choiceLabel} is right.</span>
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
-                        <span className="text-rose-800">
-                          Incorrect. The correct answer is Option {currentQuestion.choices.find((c) => c.isCorrect)?.choiceLabel}.
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-1 flex items-center gap-1.5">
-                    <BookOpen className="w-3.5 h-3.5 text-brand-600" />
-                    <span>Educational Concept &amp; Rationale</span>
-                  </div>
-                  <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-                    {currentQuestion.explanation}
-                  </p>
-                </div>
-              )}
-          </div>
-        )}
-
-        {/* Bottom Navigation Toolbar */}
-        <div className="mt-6 flex items-center justify-between gap-4">
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic(10);
-              setSession((prev) => navigatePrev(prev));
-            }}
-            disabled={session.currentIndex === 0}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-300 bg-white font-semibold text-sm text-slate-700 shadow-xs hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
-            id="prev-question-btn"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            <span>Previous</span>
-          </button>
-
-          <div className="text-xs font-semibold text-slate-500">
-            {summary.answered} of {summary.total} answered
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              triggerHaptic(10);
-              if (session.currentIndex === session.totalQuestions - 1) {
-                setShowReviewModal(true);
-              } else {
-                setSession((prev) => navigateNext(prev));
-              }
-            }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm shadow-xs transition active:scale-95"
-            id="next-question-btn"
-          >
-            <span>{session.currentIndex === session.totalQuestions - 1 ? "Review" : "Next"}</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+          </aside>
         </div>
-      </div>
+      </main>
 
-      {/* Desktop Persistent Question Palette */}
-      <aside className="hidden lg:block lg:col-span-4 bg-white rounded-2xl border border-slate-200 p-5 shadow-xs sticky top-24 space-y-4">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <LayoutGrid className="w-4 h-4 text-slate-500" />
-            <span>Question Palette</span>
-          </h3>
-          <span className="text-xs text-slate-500 font-semibold">
-            {summary.answered}/{summary.total} answered
-          </span>
-        </div>
+      {/* Save & Exit Confirmation Modal */}
+      {showExitModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-100">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+            <h3 className="text-lg font-bold text-slate-900 mb-2">Leave this test?</h3>
+            <p className="text-sm text-slate-600 mb-6">
+              {summary.answered > 0
+                ? "Your progress is saved and you can resume this test later."
+                : "You have not answered any questions yet."}
+            </p>
 
-        {/* Status Legend */}
-        <div className="flex items-center gap-3 text-[11px] font-medium text-slate-600">
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-slate-900" />
-            <span>Answered</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-white border border-slate-300" />
-            <span>Empty</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded bg-amber-100 border border-amber-400" />
-            <span>Flagged</span>
-          </div>
-        </div>
-
-        {/* Question Grid */}
-        <div className="grid grid-cols-5 gap-1.5 max-h-[55vh] overflow-y-auto p-1">
-          {initialQuestions.map((q, idx) => {
-            const ans = session.answers.get(q.id);
-            const isAnswered = Boolean(ans?.selectedChoiceId);
-            const isFlagged = Boolean(ans?.isFlagged);
-            const isCurrent = idx === session.currentIndex;
-
-            let btnClasses = "bg-white border-slate-200 text-slate-700 hover:bg-slate-50";
-            if (isAnswered) {
-              btnClasses = "bg-slate-900 border-slate-900 text-white font-bold";
-            }
-            if (isFlagged) {
-              btnClasses = "bg-amber-100 border-amber-400 text-amber-800 font-bold";
-            }
-            if (isCurrent) {
-              btnClasses += " ring-2 ring-brand-500 ring-offset-2";
-            }
-
-            return (
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
-                key={q.id}
+                type="button"
+                onClick={() => setShowExitModal(false)}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 font-semibold text-sm text-slate-700 hover:bg-slate-50 transition"
+              >
+                Keep Practicing
+              </button>
+              <button
+                type="button"
+                onClick={summary.answered > 0 ? handleSaveAndExit : handleDiscardAndExit}
+                className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm shadow-sm transition"
+              >
+                {summary.answered > 0 ? "Save & Leave" : "Leave Test"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Exam Overflow Sheet */}
+      {showMobileMenu && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div className="bg-white rounded-t-3xl sm:rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 animate-in slide-in-from-bottom duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+              <h3 className="font-bold text-sm text-slate-900">Exam Tools</h3>
+              <button
+                type="button"
+                onClick={() => setShowMobileMenu(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-1 text-sm font-medium">
+              <button
                 type="button"
                 onClick={() => {
-                  triggerHaptic(10);
-                  setSession((prev) => jumpToQuestion(prev, idx));
+                  setShowMobileMenu(false);
+                  setShowNavigator(true);
                 }}
-                className={`h-9 rounded-lg border text-xs font-semibold flex items-center justify-center transition ${btnClasses}`}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 transition"
               >
-                {idx + 1}
+                <LayoutGrid className="w-4 h-4 text-slate-500" />
+                <span>Question Map</span>
               </button>
-            );
-          })}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  setShowScratchpad(true);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 transition"
+              >
+                <Edit3 className="w-4 h-4 text-brand-600" />
+                <span>Virtual Scratchpad</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  setShowDisplayMenu(true);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 transition"
+              >
+                <Contrast className="w-4 h-4 text-slate-500" />
+                <span>Display Settings</span>
+              </button>
+              {rules.allowsFlagging && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic(12);
+                    setSession((prev) => toggleFlag(prev, currentQuestion.id));
+                    setShowMobileMenu(false);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 transition"
+                >
+                  <Flag
+                    className={`w-4 h-4 ${
+                      currentAnswer?.isFlagged ? "fill-amber-600 text-amber-600" : "text-slate-500"
+                    }`}
+                  />
+                  <span>{currentAnswer?.isFlagged ? "Unflag Question" : "Flag Question"}</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  setShowReportModal(true);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 transition"
+              >
+                <AlertCircle className="w-4 h-4 text-slate-500" />
+                <span>Report Question</span>
+              </button>
+              <div className="pt-2 border-t border-slate-100 mt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    setShowExitModal(true);
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-700 hover:bg-rose-50 transition font-semibold"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span>Save &amp; Exit</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-      </aside>
-    </div>
-  </main>
+      )}
 
       {/* Virtual Scratchpad Component */}
       <ExamScratchpad
@@ -850,37 +1226,38 @@ export function ExamRunner({
         onNotesChange={setScratchpadNotes}
       />
 
-      {/* Question Palette Modal / Drawer */}
+      {/* Question Map Modal / Drawer */}
       {showNavigator && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex justify-end">
           <div className="w-full max-w-md bg-white h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto">
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-slate-200">
                 <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                  <LayoutGrid className="w-5 h-5 text-brand-600" />
-                  <span>Question Navigator</span>
+                  <LayoutGrid className="w-5 h-5 text-slate-900" />
+                  <span>Question Map</span>
                 </h3>
                 <button
                   type="button"
                   onClick={() => setShowNavigator(false)}
                   className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 transition"
+                  aria-label="Close question map"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Status Legend */}
-              <div className="grid grid-cols-3 gap-2 my-4 text-xs font-medium">
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <span className="w-3.5 h-3.5 rounded bg-brand-600" />
+              <div className="flex items-center justify-between text-xs font-medium text-slate-600 my-4 pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-slate-900" />
                   <span>Answered</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <span className="w-3.5 h-3.5 rounded bg-white border border-slate-300" />
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded bg-white border border-slate-300" />
                   <span>Unanswered</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-slate-600">
-                  <span className="w-3.5 h-3.5 rounded bg-amber-100 border border-amber-400" />
+                <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rotate-45 border border-amber-500 bg-amber-200" />
                   <span>Flagged</span>
                 </div>
               </div>
@@ -895,13 +1272,13 @@ export function ExamRunner({
 
                   let btnClasses = "bg-white border-slate-200 text-slate-700 hover:bg-slate-50";
                   if (isAnswered) {
-                    btnClasses = "bg-brand-600 border-brand-600 text-white font-bold";
+                    btnClasses = "bg-slate-900 border-slate-900 text-white font-bold";
                   }
                   if (isFlagged) {
-                    btnClasses = "bg-amber-100 border-amber-400 text-amber-800 font-bold";
+                    btnClasses = "bg-amber-50 border-amber-400 text-amber-900 font-bold";
                   }
                   if (isCurrent) {
-                    btnClasses += " ring-2 ring-brand-500 ring-offset-2";
+                    btnClasses += " ring-2 ring-slate-900 ring-offset-2";
                   }
 
                   return (
@@ -913,9 +1290,12 @@ export function ExamRunner({
                         setSession((prev) => jumpToQuestion(prev, idx));
                         setShowNavigator(false);
                       }}
-                      className={`h-11 rounded-xl border text-sm font-semibold flex items-center justify-center transition ${btnClasses}`}
+                      className={`relative h-11 rounded-xl border text-sm font-semibold flex items-center justify-center transition ${btnClasses}`}
                     >
                       {idx + 1}
+                      {isFlagged && isAnswered && (
+                        <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-400 border border-white" />
+                      )}
                     </button>
                   );
                 })}
@@ -939,22 +1319,36 @@ export function ExamRunner({
       {showReviewModal && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in duration-150">
-            <h3 className="text-lg font-bold text-slate-900 mb-2">Review Before Submission</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-1.5">Review Before Submission</h3>
             <p className="text-xs text-slate-500 mb-6">
               Ensure you have addressed all questions and flagged items before submitting your final answers.
             </p>
 
             <div className="grid grid-cols-3 gap-3 mb-6">
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
-                <div className="text-2xl font-black text-brand-700">{summary.answered}</div>
+                <div className="text-2xl font-black text-slate-900">
+                  {summary.answered} of {summary.total}
+                </div>
                 <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Answered</div>
               </div>
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
-                <div className="text-2xl font-black text-amber-600">{summary.unanswered}</div>
+              <div
+                className={`p-3.5 rounded-xl border text-center ${
+                  summary.unanswered > 0 ? "bg-rose-50/70 border-rose-200" : "bg-slate-50 border-slate-200"
+                }`}
+              >
+                <div className={`text-2xl font-black ${summary.unanswered > 0 ? "text-rose-600" : "text-slate-400"}`}>
+                  {summary.unanswered}
+                </div>
                 <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Unanswered</div>
               </div>
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-center">
-                <div className="text-2xl font-black text-amber-700">{summary.flagged}</div>
+              <div
+                className={`p-3.5 rounded-xl border text-center ${
+                  summary.flagged > 0 ? "bg-amber-50/70 border-amber-200" : "bg-slate-50 border-slate-200"
+                }`}
+              >
+                <div className={`text-2xl font-black ${summary.flagged > 0 ? "text-amber-600" : "text-slate-400"}`}>
+                  {summary.flagged}
+                </div>
                 <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Flagged</div>
               </div>
             </div>
@@ -968,22 +1362,23 @@ export function ExamRunner({
               </div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setShowReviewModal(false)}
-                className="flex-1 py-3 rounded-xl border border-slate-300 font-semibold text-slate-700 hover:bg-slate-50 text-sm transition"
+                className="flex-1 py-2.5 rounded-xl border border-slate-300 font-semibold text-slate-700 hover:bg-slate-50 text-sm transition"
               >
-                Continue Exam
+                Return to Questions
               </button>
               <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="flex-1 py-3 rounded-xl bg-brand-700 hover:bg-brand-800 font-bold text-white text-sm shadow-md shadow-brand-700/20 transition disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 font-bold text-white text-sm shadow-md transition disabled:opacity-50 inline-flex items-center justify-center gap-2"
                 id="confirm-submit-btn"
               >
-                {isSubmitting ? "Calculating Results..." : "Submit & View Results"}
+                <Send className="w-4 h-4" />
+                <span>{isSubmitting ? "Calculating Results..." : "Submit Test"}</span>
               </button>
             </div>
           </div>
