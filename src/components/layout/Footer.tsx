@@ -5,7 +5,7 @@ import { Award, ShieldCheck, Mail, FileText, BookOpen, HelpCircle } from "lucide
 
 export function Footer() {
   return (
-    <footer className="border-t border-slate-200 bg-white text-slate-600 text-sm print:hidden">
+    <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 text-sm print:hidden transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           {/* Brand & Mission Column */}
@@ -136,6 +136,17 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/settings/help" prefetch={true} className="hover:text-brand-700 transition flex items-center gap-1.5">
+                  <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+                  Help &amp; Diagnostics
+                </Link>
+              </li>
+              <li>
+                <Link href="/settings" prefetch={true} className="hover:text-brand-700 transition">
+                  Reviewer Settings
+                </Link>
+              </li>
+              <li>
                 <button
                   type="button"
                   onClick={() => {
@@ -145,7 +156,7 @@ export function Footer() {
                   }}
                   className="hover:text-brand-700 transition text-slate-500 underline text-left"
                 >
-                  Cookie & Ad Preferences
+                  Cookie &amp; Ad Preferences
                 </button>
               </li>
             </ul>
