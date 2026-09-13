@@ -13,6 +13,42 @@ const config: Config = {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        card: {
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
+        },
+        popover: {
+          DEFAULT: "var(--popover)",
+          foreground: "var(--popover-foreground)",
+        },
+        primary: {
+          DEFAULT: "var(--primary)",
+          foreground: "var(--primary-foreground)",
+        },
+        secondary: {
+          DEFAULT: "var(--secondary)",
+          foreground: "var(--secondary-foreground)",
+        },
+        muted: {
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
+        },
+        accent: {
+          DEFAULT: "var(--accent)",
+          foreground: "var(--accent-foreground)",
+        },
+        destructive: {
+          DEFAULT: "var(--destructive)",
+          foreground: "var(--destructive-foreground)",
+        },
+        highlight: {
+          DEFAULT: "var(--highlight)",
+          foreground: "var(--highlight-foreground)",
+          border: "var(--highlight-border)",
+        },
+        border: "var(--border)",
+        input: "var(--input)",
+        ring: "var(--ring)",
         brand: {
           50: "#f0f4fc",
           100: "#dbe4f8",
@@ -24,6 +60,7 @@ const config: Config = {
           700: "#1e3a8a",
           800: "#172554",
           900: "#0f172a",
+          950: "#080d1a", // Deep midnight navy for high contrast surfaces
         },
         gold: {
           50: "#fffbeb",
@@ -34,6 +71,9 @@ const config: Config = {
           500: "#f59e0b", // Philippine sun gold
           600: "#d97706",
           700: "#b45309",
+          800: "#92400e",
+          900: "#78350f",
+          950: "#451a03",
         },
       },
     },
