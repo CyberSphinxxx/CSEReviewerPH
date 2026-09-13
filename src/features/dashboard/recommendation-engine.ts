@@ -19,7 +19,7 @@ export interface NextBestStepRecommendation {
 
 /**
  * Computes the examinee's single most impactful next action based on their
- * real learning history, Leitner SRS due items, and subtest benchmark scores.
+ * real learning history, Leitner SRS due items, and subtest practice accuracy.
  */
 export function getNextBestStepRecommendation(
   attempts: AttemptSummary[],
@@ -31,36 +31,36 @@ export function getNextBestStepRecommendation(
   if (attempts.length === 0) {
     return {
       type: "diagnostic",
-      title: "Take Your 10-Question Diagnostic Benchmark",
+      title: "Take a 10-Question Diagnostic Benchmark",
       description:
-        "Establish your baseline proficiency across Civil Service subtests against the official 80% passing standard. Takes less than 10 minutes.",
+        "Establish your baseline practice accuracy across Civil Service subtests against your 80% study target.",
       actionLabel: "Start Diagnostic Drill (10 min)",
       actionHref: "/exams/professional/quick",
       tag: "Immediate Priority",
       urgency: "high",
-      subtext: "10 mixed questions • Immediate concept explanations",
+      subtext: "10 mixed questions • Instant concept explanations",
     };
   }
 
   // 2. Active Spaced Repetition (SRS): Due items in Mistake Bank
   if (dueMistakes.length > 0) {
-    const plural = dueMistakes.length > 1;
+    const count = dueMistakes.length;
+    const plural = count > 1;
     return {
       type: "srs_review",
-      title: `Review ${dueMistakes.length} Due Missed Question${plural ? "s" : ""}`,
-      description: `Leitner spaced repetition interval has matured. Reviewing these items now reinforces concept retention before questions demote to Box 1.`,
-      actionLabel: "Practice Due Mistakes",
+      title: `${count} question${plural ? "s" : ""} ready to review`,
+      description: "Revisit these questions from your earlier practice to reinforce concept retention.",
+      actionLabel: `Review ${count} question${plural ? "s" : ""}`,
       actionHref: "/dashboard/mistakes?filter=due",
       tag: "Spaced Repetition",
       urgency: "urgent",
-      badgeCount: dueMistakes.length,
-      subtext: "Leitner Box review • Target 100% resolution",
+      badgeCount: count,
+      subtext: "Leitner spaced review • Scheduled for today",
     };
   }
 
-  // 3. Weak Subtest Targeting: Any subtest performing below 80% passing benchmark
+  // 3. Weak Subtest Targeting: Any subtest performing below 80% study target
   if (subtestAccuracies && subtestAccuracies.length > 0) {
-    // Find the subtest with lowest accuracy that is strictly below 80%
     const subtestsBelowBenchmark = subtestAccuracies
       .filter((s) => s.accuracy < 80)
       .sort((a, b) => a.accuracy - b.accuracy);
@@ -69,13 +69,13 @@ export function getNextBestStepRecommendation(
       const weakest = subtestsBelowBenchmark[0];
       return {
         type: "weak_subtest",
-        title: `Strengthen Weak Area: ${weakest.name} (${weakest.accuracy}%)`,
-        description: `Your average accuracy in ${weakest.name} is currently ${weakest.accuracy}%, below the required 80.00% benchmark. Focused topic drills will raise your score.`,
+        title: `Strengthen ${weakest.name} (${weakest.accuracy}%)`,
+        description: `Your practice accuracy in ${weakest.name} is currently ${weakest.accuracy}%, below your 80% study target. Focused topic drills will help close this gap.`,
         actionLabel: `Practice ${weakest.name}`,
         actionHref: "/practice",
-        tag: "Benchmark Gap",
+        tag: "Study Target Gap",
         urgency: "medium",
-        subtext: "Target: 80%+ passing benchmark",
+        subtext: "Goal: Reach 80%+ practice accuracy",
       };
     }
   }
@@ -90,7 +90,7 @@ export function getNextBestStepRecommendation(
       type: "full_mock",
       title: "Take a Full 170-Item Mock Exam",
       description:
-        "Your subtest accuracy consistently meets the passing standard. Validate your endurance and time management under official 3h 10m continuous timing.",
+        "Validate your stamina and pacing under official 3h 10m continuous timing.",
       actionLabel: "Launch Full Mock Exam",
       actionHref: "/exams/professional/full",
       tag: "Exam Simulation",
@@ -104,11 +104,11 @@ export function getNextBestStepRecommendation(
     type: "maintain_streak",
     title: "Daily 10-Question Quick Drill",
     description:
-      "Maintain active cognitive recall and sharpen your 67-second question pacing with a quick mixed-subject session.",
+      "Sharpen your question pacing and keep your recall active with a short mixed-subject session.",
     actionLabel: "Start Quick Drill (10 min)",
     actionHref: "/exams/professional/quick",
     tag: "Daily Pacing",
     urgency: "normal",
-    subtext: "10 mixed items • Maintain daily study streak",
+    subtext: "10 mixed items • Maintain daily study habit",
   };
 }
