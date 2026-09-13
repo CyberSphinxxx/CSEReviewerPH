@@ -26,7 +26,7 @@ export const DEFAULT_STUDY_PREFERENCES: Readonly<StudyPreferences> = {
 };
 
 export const DEFAULT_APPEARANCE_PREFERENCES: Readonly<AppearancePreferences> = {
-  theme: "system",
+  theme: "light",
   reduceMotion: "device",
 };
 
