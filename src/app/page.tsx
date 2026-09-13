@@ -9,14 +9,12 @@ import {
   Target,
   Award,
   AlertTriangle,
-  BrainCircuit,
-  Compass,
   FileCheck2,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
-import { HeroDiagnosticPlanPreview } from "@/components/home/HeroDiagnosticPlanPreview";
+import { HeroExamLevelSelector } from "@/components/home/HeroExamLevelSelector";
 import { SubtestExplorer } from "@/components/home/SubtestExplorer";
 
 export default function HomePage() {
@@ -31,33 +29,30 @@ export default function HomePage() {
     <div className="min-h-screen flex flex-col bg-slate-50 relative selection:bg-brand-100 selection:text-brand-900">
       <Header />
 
+      {/* Subtle Utility Line Below Navigation */}
+      <div className="border-b border-slate-200/80 bg-white/70 backdrop-blur-xs py-2">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+          <div className="inline-flex items-center gap-2 text-xs font-medium text-slate-500">
+            <span className="flex h-2 w-2 relative">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span className="font-semibold text-slate-700">Next CSE-PPT: March 21, 2027</span>
+            <span className="text-slate-300">&middot;</span>
+            <span>{diffDays} days remaining</span>
+          </div>
+        </div>
+      </div>
+
       <main className="flex-1 animate-page-enter">
         {/* ========================================================================= */}
-        {/* HERO SECTION: Single Clear Promise, Outcome Preview, Quiet Countdown     */}
+        {/* HERO SECTION: Stable Promise, Exam-Level Selection Card, Focused Action   */}
         {/* ========================================================================= */}
-        <section className="relative overflow-hidden pt-8 pb-16 md:pt-14 md:pb-20 border-b border-slate-200/80 bg-gradient-to-b from-white via-brand-50/20 to-slate-50">
-          {/* Subtle Atmospheric Grid Background */}
-          <div
-            className="absolute inset-0 pointer-events-none opacity-[0.035]"
-            style={{
-              backgroundImage: `radial-gradient(#0f172a 1px, transparent 1px)`,
-              backgroundSize: "24px 24px",
-            }}
-          />
-
+        <section className="relative overflow-hidden pt-6 pb-6 md:pt-10 md:pb-8 border-b border-slate-200/80 bg-gradient-to-b from-white via-brand-50/15 to-slate-50">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
-              {/* Left Column: Hero Copy, Primary & Secondary CTAs, Trust Points (7 cols) */}
-              <div className="lg:col-span-7 text-left space-y-5">
-                {/* Quiet Utility Countdown Detail */}
-                <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
-                  <span className="flex h-2 w-2 relative">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-brand-500" />
-                  </span>
-                  <span>Next CSE-PPT: March 21, 2027 &bull; {diffDays} days remaining</span>
-                </div>
-
+              {/* Left Column: Product Promise, Two-Sentence Explanation, How It Works Link (7 cols) */}
+              <div className="lg:col-span-7 text-left space-y-6">
                 {/* Small Category Label */}
                 <div>
                   <span className="text-xs font-bold uppercase tracking-widest text-brand-700 block">
@@ -65,181 +60,162 @@ export default function HomePage() {
                   </span>
                 </div>
 
-                {/* Main Headline */}
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.12]">
-                  Know what to study next.
+                {/* Main Headline with focal blue highlight */}
+                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.15]">
+                  Know what to<br />
+                  <span className="text-brand-600">study next.</span>
                 </h1>
 
-                {/* Short Support Sentence */}
-                <p className="text-base sm:text-lg text-slate-600 max-w-xl leading-relaxed">
-                  Take a free 10-question diagnostic and get a clear view of your strongest and weakest CSE subtests.
+                {/* Two-Sentence Explanation */}
+                <p className="text-base sm:text-lg text-slate-600 max-w-lg leading-relaxed">
+                  Take a 10-question diagnostic. See which subjects need attention, then continue with a recommended drill.
                 </p>
 
-                {/* Primary & Secondary Call to Actions */}
-                <div className="pt-2 flex flex-wrap gap-3.5 items-center">
-                  <Link
-                    href={`/exams/${selectedLevel}/quick`}
-                    prefetch={true}
-                    className="inline-flex items-center justify-center px-7 py-3.5 rounded-xl bg-slate-900 text-white font-bold text-sm sm:text-base shadow-sm hover:bg-slate-800 transition transform active:scale-95"
-                  >
-                    <span>Start Free Diagnostic</span>
-                    <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
-                  </Link>
-
+                {/* See how the diagnostic works Link (Desktop/Tablet secondary link; hidden on mobile to preserve exact reading order) */}
+                <div className="pt-1 hidden sm:block">
                   <a
-                    href="#how-it-works"
-                    className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-white text-slate-800 font-bold text-sm sm:text-base border border-slate-300 shadow-xs hover:bg-slate-50 hover:border-slate-400 transition"
+                    href="#what-happens-next"
+                    className="inline-flex items-center gap-1.5 text-sm font-bold text-brand-600 hover:text-brand-700 transition underline underline-offset-4 decoration-brand-200 hover:decoration-brand-500"
                   >
-                    <span>How It Works</span>
+                    <span>See how the diagnostic works</span>
+                    <ArrowRight className="w-4 h-4" />
                   </a>
-                </div>
-
-                {/* Three Short Trust Points */}
-                <div className="pt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500 font-medium">
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    No sign-up required
-                  </span>
-                  <span className="text-slate-300">&bull;</span>
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    Professional &amp; Subprofessional
-                  </span>
-                  <span className="text-slate-300">&bull;</span>
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    Original questions
-                  </span>
                 </div>
               </div>
 
-              {/* Right Column: Static Outcome Preview Visual (5 cols) */}
+              {/* Right Column: Exam-Level Selection Card (5 cols) */}
               <div className="lg:col-span-5 flex flex-col items-center">
-                <HeroDiagnosticPlanPreview level={selectedLevel} />
+                <HeroExamLevelSelector
+                  selectedLevel={selectedLevel}
+                  onSelectLevel={setSelectedLevel}
+                />
               </div>
             </div>
           </div>
         </section>
 
         {/* ========================================================================= */}
-        {/* HOW IT WORKS & LEARNING LOOP SECTION (Anchored by #how-it-works)         */}
+        {/* WHAT HAPPENS NEXT SECTION (Directly Below Hero)                           */}
         {/* ========================================================================= */}
-        <section id="how-it-works" className="py-16 md:py-20 bg-white border-b border-slate-200 scroll-mt-14">
+        <section
+          id="what-happens-next"
+          className="pt-6 pb-12 md:pt-8 md:pb-16 bg-white border-b border-slate-200 scroll-mt-14 relative"
+        >
+          {/* Invisible target for compatibility with legacy #how-it-works links */}
+          <div id="how-it-works" className="absolute -top-14 left-0" />
+
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
             <div className="text-center max-w-2xl mx-auto space-y-2">
               <span className="text-xs font-bold uppercase tracking-wider text-brand-700">
-                The Product Loop
+                WHAT HAPPENS NEXT
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                Start with 10 questions.<br className="hidden sm:inline" /> Get a clear next step.
+              </h2>
+            </div>
+
+            {/* 3 Steps: Desktop Horizontal / Mobile Vertical */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+              {/* Step 01 */}
+              <div className="p-6 sm:p-7 rounded-2xl bg-slate-50/90 border border-slate-200/80 shadow-xs space-y-3">
+                <span className="text-2xl font-black text-brand-600 block">
+                  01
+                </span>
+                <h3 className="font-bold text-lg text-slate-900">
+                  Take a short diagnostic
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Answer a balanced set across your exam coverage.
+                </p>
+              </div>
+
+              {/* Step 02 */}
+              <div className="p-6 sm:p-7 rounded-2xl bg-slate-50/90 border border-slate-200/80 shadow-xs space-y-3">
+                <span className="text-2xl font-black text-brand-600 block">
+                  02
+                </span>
+                <h3 className="font-bold text-lg text-slate-900">
+                  See where to focus
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Review the areas that need more attention.
+                </p>
+              </div>
+
+              {/* Step 03 */}
+              <div className="p-6 sm:p-7 rounded-2xl bg-slate-50/90 border border-slate-200/80 shadow-xs space-y-3">
+                <span className="text-2xl font-black text-brand-600 block">
+                  03
+                </span>
+                <h3 className="font-bold text-lg text-slate-900">
+                  Practise with purpose
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Continue with a recommended topic drill.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ========================================================================= */}
+        {/* WHY STUDY WITH CSEREVIEWPH.COM SECTION                                    */}
+        {/* ========================================================================= */}
+        <section className="py-16 md:py-20 bg-slate-50/70 border-b border-slate-200/80">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+            <div className="text-center max-w-2xl mx-auto space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                WHY STUDY WITH CSEREVIEWPH.COM
               </span>
               <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-                How It Works: From Diagnostic to Exam Readiness
+                Built For Purposeful Civil Service Review
               </h2>
               <p className="text-sm sm:text-base text-slate-600">
-                A structured 4-step loop designed around active recall, diagnostic gap closure, and real examination time management.
+                Exam preparation designed around accuracy, clear explanations, and exact CSC scope.
               </p>
             </div>
 
-            {/* 4-Step Learning Cycle Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200/60">
-                    Step 1
-                  </span>
-                  <Clock className="w-4 h-4 text-brand-600" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+              {/* Trust Claim 1 */}
+              <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3">
+                <div className="flex items-center gap-2 text-brand-700">
+                  <FileCheck2 className="w-5 h-5 shrink-0" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-brand-800">Exam Scope</span>
                 </div>
-                <h3 className="font-bold text-base text-slate-900">1. Practice Immediately</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Start with a 10-question diagnostic with zero sign-up friction. Answers auto-save locally to your browser.
+                <h3 className="font-bold text-lg text-slate-900">
+                  Original practice questions
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Every question is written for this platform and follows the published CSE scope.
                 </p>
               </div>
 
-              <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-200/60">
-                    Step 2
-                  </span>
-                  <Target className="w-4 h-4 text-brand-600" />
+              {/* Trust Claim 2 */}
+              <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3">
+                <div className="flex items-center gap-2 text-emerald-700">
+                  <CheckCircle2 className="w-5 h-5 shrink-0" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">Concept Mastery</span>
                 </div>
-                <h3 className="font-bold text-base text-slate-900">2. Diagnose Gaps</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Receive instant subtest accuracy breakdowns benchmarked against the official 80.00% passing threshold.
+                <h3 className="font-bold text-lg text-slate-900">
+                  Detailed answer explanations
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Review why an answer is correct and strengthen the underlying concept.
                 </p>
               </div>
 
-              <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
-                    Step 3
-                  </span>
-                  <BrainCircuit className="w-4 h-4 text-amber-600" />
+              {/* Trust Claim 3 */}
+              <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-3">
+                <div className="flex items-center gap-2 text-blue-700">
+                  <Target className="w-5 h-5 shrink-0" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-800">Level Coverage</span>
                 </div>
-                <h3 className="font-bold text-base text-slate-900">3. Review Mistakes</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Every incorrect response enters your Leitner Spaced Repetition mistake bank for targeted concept re-testing.
+                <h3 className="font-bold text-lg text-slate-900">
+                  Built for both CSE levels
+                </h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Choose Professional or Subprofessional and study the subjects included in your level.
                 </p>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 shadow-xs space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
-                    Step 4
-                  </span>
-                  <Award className="w-4 h-4 text-emerald-600" />
-                </div>
-                <h3 className="font-bold text-base text-slate-900">4. Measure Readiness</h3>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Track confidence scores, drill high-yield topics, and graduate to full-length continuous simulation mocks.
-                </p>
-              </div>
-            </div>
-
-            {/* The Real Practice Interface Overview */}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block mb-1">
-                    Authentic Examination Engine
-                  </span>
-                  <h3 className="text-xl font-bold text-slate-900">
-                    How the Exam Runner Works
-                  </h3>
-                </div>
-                <Link
-                  href="/practice"
-                  prefetch={true}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:text-brand-800 hover:underline"
-                >
-                  <span>Explore All Practice Topics</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed max-w-4xl">
-                Unlike informal quiz apps, our test engine enforces genuine examination fidelity: <strong>single continuous timers</strong> (3h 10m Pro / 2h 40m Subpro), question navigation drawers, flag-for-review tags, choice eliminators, and comprehensive pedagogical explanations revealed only after completing your test.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 text-xs text-slate-700">
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-slate-200/80">
-                  <FileCheck2 className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block text-slate-900">Zero Scraped Questions</span>
-                    <span className="text-slate-500 text-[11px]">Authored fresh by educators; no leaked or pirated materials.</span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-slate-200/80">
-                  <Clock className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block text-slate-900">Single Continuous Timer</span>
-                    <span className="text-slate-500 text-[11px]">Trains stamina and pacing across the full 170/165 items.</span>
-                  </div>
-                </div>
-                <div className="flex items-start gap-2.5 p-3 rounded-xl bg-white border border-slate-200/80">
-                  <Compass className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold block text-slate-900">Offline PWA Resumption</span>
-                    <span className="text-slate-500 text-[11px]">Interrupted sessions resume seamlessly from local storage.</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
@@ -248,7 +224,7 @@ export default function HomePage() {
         {/* ========================================================================= */}
         {/* PREPARATION MODES & LEVEL SWITCHER SECTION                                */}
         {/* ========================================================================= */}
-        <section className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+        <section id="compare-levels" className="py-16 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 scroll-mt-14">
           <div className="text-center space-y-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
               Exam Formats &bull; Select Your Level
