@@ -44,7 +44,7 @@ describe("UserNav Component", () => {
     fireEvent.click(signInBtn);
 
     expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByText(/Sign In to Sync Progress/i)).toBeInTheDocument();
+    expect(screen.getByText("Welcome back")).toBeInTheDocument();
   });
 
   it("renders user initials and opens dropdown with sync & RA 10173 options when authenticated", () => {
