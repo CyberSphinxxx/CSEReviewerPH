@@ -25,6 +25,11 @@
     --ring: #1e40af;
     --radius: 0.75rem;
 
+    /* Semantic active / selection highlight tokens */
+    --highlight: #eff6ff;
+    --highlight-foreground: #1e3a8a;
+    --highlight-border: #93c5fd;
+
     /* Reading Comfort Tokens */
     --reading-font-size: 1rem;
     --reading-line-height: 1.6;
@@ -51,6 +56,11 @@
     --border: #1e293b;
     --input: #1e293b;
     --ring: #3b82f6;
+
+    /* Semantic active / selection highlight tokens in dark mode */
+    --highlight: #0d1a38;
+    --highlight-foreground: #ffffff;
+    --highlight-border: #3b82f6;
   }
 }
 
