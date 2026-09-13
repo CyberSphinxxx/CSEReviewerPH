@@ -17,13 +17,13 @@ export function HeroExamLevelSelector({
   return (
     <div className="relative mx-auto w-full max-w-md">
       {/* Selection Card: Clean white card, thin border, gentle shadow */}
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-lg shadow-slate-900/5 ring-1 ring-slate-900/5 text-slate-800 space-y-4">
+      <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 sm:p-6 shadow-lg shadow-slate-900/5 ring-1 ring-slate-900/5 dark:ring-white/5 text-slate-800 dark:text-slate-100 space-y-4">
         {/* Header: Label & Heading */}
         <div className="space-y-1">
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-500 block">
+          <span className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 block">
             START YOUR REVIEW
           </span>
-          <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+          <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white tracking-tight">
             Choose your exam level
           </h2>
         </div>
@@ -38,25 +38,25 @@ export function HeroExamLevelSelector({
             onClick={() => onSelectLevel("professional")}
             className={`w-full text-left p-3.5 rounded-xl border transition flex items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
               isPro
-                ? "border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900/10"
-                : "border-slate-200/90 bg-white hover:border-slate-300 hover:bg-slate-50/40"
+                ? "border-brand-600 dark:border-brand-400 bg-highlight dark:bg-brand-950 shadow-xs ring-1 ring-brand-600 dark:ring-brand-400"
+                : "border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/40 dark:hover:bg-slate-800/40"
             }`}
           >
             {/* Custom Radio Circle */}
             <span
               className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition ${
                 isPro
-                  ? "border-brand-600 bg-brand-600"
-                  : "border-slate-300 bg-white"
+                  ? "border-brand-600 dark:border-brand-400 bg-brand-600 dark:bg-brand-500"
+                  : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
               }`}
             >
               {isPro && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
             </span>
 
             <div className="space-y-0.5 flex-1 min-w-0">
-              <span className="text-sm font-bold text-slate-900 block">Professional</span>
-              <p className="text-xs text-slate-500 leading-normal truncate sm:whitespace-normal">
-                For second-level positions &middot; <span className="font-medium text-brand-700">Includes Analytical Ability</span>
+              <span className="text-sm font-bold text-slate-900 dark:text-white block">Professional</span>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-normal truncate sm:whitespace-normal">
+                For second-level positions &middot; <span className="font-medium text-brand-700 dark:text-brand-400">Includes Analytical Ability</span>
               </p>
             </div>
           </button>
@@ -69,25 +69,25 @@ export function HeroExamLevelSelector({
             onClick={() => onSelectLevel("subprofessional")}
             className={`w-full text-left p-3.5 rounded-xl border transition flex items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 ${
               !isPro
-                ? "border-slate-900 bg-slate-50/80 shadow-xs ring-1 ring-slate-900/10"
-                : "border-slate-200/90 bg-white hover:border-slate-300 hover:bg-slate-50/40"
+                ? "border-brand-600 dark:border-brand-400 bg-highlight dark:bg-brand-950 shadow-xs ring-1 ring-brand-600 dark:ring-brand-400"
+                : "border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/40 dark:hover:bg-slate-800/40"
             }`}
           >
             {/* Custom Radio Circle */}
             <span
               className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition ${
                 !isPro
-                  ? "border-brand-600 bg-brand-600"
-                  : "border-slate-300 bg-white"
+                  ? "border-brand-600 dark:border-brand-400 bg-brand-600 dark:bg-brand-500"
+                  : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800"
               }`}
             >
               {!isPro && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
             </span>
 
             <div className="space-y-0.5 flex-1 min-w-0">
-              <span className="text-sm font-bold text-slate-900 block">Subprofessional</span>
-              <p className="text-xs text-slate-500 leading-normal truncate sm:whitespace-normal">
-                For first-level positions &middot; <span className="font-medium text-brand-700">Includes Clerical Ability</span>
+              <span className="text-sm font-bold text-slate-900 dark:text-white block">Subprofessional</span>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-normal truncate sm:whitespace-normal">
+                For first-level positions &middot; <span className="font-medium text-brand-700 dark:text-brand-400">Includes Clerical Ability</span>
               </p>
             </div>
           </button>
