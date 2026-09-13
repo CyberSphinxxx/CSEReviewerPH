@@ -298,7 +298,7 @@ test.describe("Civil Service Exam Reviewer E2E Flows", () => {
     // Verify modal appears and is visible
     const modal = page.getByRole("dialog");
     await expect(modal).toBeVisible();
-    await expect(page.getByText("Sign In to Sync Progress")).toBeVisible();
+    await expect(page.getByText("Welcome back")).toBeVisible();
 
     // Verify modal bounding box is well within viewport (top > 0)
     const box = await modal.boundingBox();
