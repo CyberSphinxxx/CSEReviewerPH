@@ -2,6 +2,7 @@ import type { EngineQuestion } from "@/features/exam-engine";
 import type {
   ActiveExamSessionDraft,
   AttemptSummary,
+  DailyActivityCell,
   GuestBackupPayload,
   StoredAttemptDetails,
   StoredBookmarkItem,
@@ -76,11 +77,26 @@ function safeRemoveItem(key: string): void {
   }
 }
 
-function getTodayString(): string {
+export function getTodayString(d = new Date()): string {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Manila",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+    return formatter.format(d);
+  } catch {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+      d.getDate()
+    ).padStart(2, "0")}`;
+  }
+}
+
+export function getYesterdayString(): string {
   const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
-    d.getDate()
-  ).padStart(2, "0")}`;
+  d.setDate(d.getDate() - 1);
+  return getTodayString(d);
 }
 
 const DEFAULT_FALLBACK_SUBJECTS = [
@@ -535,12 +551,99 @@ export class LocalStorageService {
   /* -------------------------------------------------------------------------- */
 
   public static getStudyStreak(): StudyStreakData {
-    return safeGetItem<StudyStreakData>(STORAGE_KEYS.STREAK, {
+    const raw = safeGetItem<StudyStreakData>(STORAGE_KEYS.STREAK, {
       currentStreak: 0,
       longestStreak: 0,
       lastActiveDate: "",
       activeDates: [],
+      checkInDates: [],
     });
+
+    const today = getTodayString();
+    const yesterday = getYesterdayString();
+
+    // If last active date is today or yesterday, streak is retained.
+    // If older, streak has expired back to 0 (while preserving longestStreak).
+    let activeStreak = raw.currentStreak;
+    if (raw.lastActiveDate && raw.lastActiveDate !== today && raw.lastActiveDate !== yesterday) {
+      activeStreak = 0;
+    }
+
+    return {
+      ...raw,
+      currentStreak: activeStreak,
+      checkInDates: raw.checkInDates || [],
+    };
+  }
+
+  public static recordDailyCheckIn(): void {
+    const current = this.getStudyStreak();
+    const today = getTodayString();
+    const checkIns = current.checkInDates || [];
+    if (!checkIns.includes(today)) {
+      const updated: StudyStreakData = {
+        ...current,
+        checkInDates: [...checkIns, today],
+      };
+      safeSetItem(STORAGE_KEYS.STREAK, updated);
+    }
+  }
+
+  public static formatDayStreak(days: number): string {
+    return `${days} ${days === 1 ? "day" : "days"}`;
+  }
+
+  /**
+   * Generates continuous daily cells for the activity grid across the last N weeks
+   * up to today, mapped in Asia/Manila date keys.
+   */
+  public static getActivityGridData(weeks = 12): DailyActivityCell[] {
+    const today = getTodayString();
+    const streak = this.getStudyStreak();
+    const history = this.getAttemptHistory();
+    const checkIns = new Set(streak.checkInDates || []);
+    const activeDates = new Set(streak.activeDates || []);
+
+    const cells: DailyActivityCell[] = [];
+    const totalDays = weeks * 7;
+
+    const now = new Date();
+    for (let i = totalDays - 1; i >= 0; i--) {
+      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateStr = getTodayString(d);
+      const questionCount = this.getDailyQuestionsAnswered(dateStr);
+      const hasCheckIn = checkIns.has(dateStr) || activeDates.has(dateStr);
+      const sessionsCount = history.filter((h) => h.date && h.date.startsWith(dateStr)).length;
+
+      let activityLevel: 0 | 1 | 2 | 3 = 0;
+      if (questionCount >= 26) {
+        activityLevel = 3;
+      } else if (questionCount >= 11) {
+        activityLevel = 2;
+      } else if (questionCount >= 1) {
+        activityLevel = 1;
+      }
+
+      const formattedDate = d.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+
+      cells.push({
+        date: dateStr,
+        formattedDate,
+        dayOfWeek: d.getDay(),
+        questionCount,
+        hasCheckIn,
+        sessionsCount,
+        activityLevel,
+        isToday: dateStr === today,
+        isFuture: dateStr > today,
+      });
+    }
+
+    return cells;
   }
 
   public static recordDailyActivity(): StudyStreakData {
@@ -568,6 +671,7 @@ export class LocalStorageService {
       longestStreak: Math.max(newStreak, current.longestStreak),
       lastActiveDate: today,
       activeDates: Array.from(new Set([...current.activeDates, today])),
+      checkInDates: Array.from(new Set([...(current.checkInDates || []), today])),
     };
 
     safeSetItem(STORAGE_KEYS.STREAK, updated);
@@ -593,8 +697,8 @@ export class LocalStorageService {
     });
   }
 
-  public static saveTargetExamConfig(config: TargetExamConfig): void {
-    safeSetItem(STORAGE_KEYS.TARGET_EXAM, config);
+  public static saveTargetExamConfig(config: TargetExamConfig): boolean {
+    return safeSetItem(STORAGE_KEYS.TARGET_EXAM, config);
   }
 
   /* -------------------------------------------------------------------------- */
@@ -653,7 +757,7 @@ export class LocalStorageService {
     }
 
     return Array.from(subjectsMap.values()).map((val) => {
-      const accuracy = val.total > 0 ? Math.round((val.correct / val.total) * 100) : 75;
+      const accuracy = val.total > 0 ? Math.round((val.correct / val.total) * 100) : 0;
       return {
         subjectId: val.subjectId,
         subjectName: val.subjectName,
