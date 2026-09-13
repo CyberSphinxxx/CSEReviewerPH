@@ -21,6 +21,9 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: false,
+    async sendResetPassword(data) {
+      console.log(`[Auth] Password reset link for ${data.user.email}: ${data.url}`);
+    },
   },
 });
 
