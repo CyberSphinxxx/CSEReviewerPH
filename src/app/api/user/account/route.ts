@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/db";
-import { users, testAttempts, bookmarks } from "@/db/schema";
+import { users, testAttempts, bookmarks, userProgress, sessions, accounts } from "@/db/schema";
 import { eq } from "drizzle-orm";
 
 /**
@@ -42,8 +42,8 @@ export async function GET(request: Request) {
         .select()
         .from(testAttempts)
         .where(eq(testAttempts.userId, userId));
-    } catch {
-      // Graceful fallback if database table not reachable
+    } catch (err) {
+      console.warn("[AccountAPI] Could not fetch attempts:", err);
     }
 
     try {
@@ -51,12 +51,16 @@ export async function GET(request: Request) {
         .select()
         .from(bookmarks)
         .where(eq(bookmarks.userId, userId));
-    } catch {
-      // Graceful fallback
+    } catch (err) {
+      console.warn("[AccountAPI] Could not fetch bookmarks:", err);
     }
 
     return NextResponse.json({
+      exportType: "account_privacy_export",
+      scope: "cloud_account_data",
       legalNotice: "Exported in accordance with Republic Act No. 10173 (Data Privacy Act of 2012).",
+      formatNotice:
+        "This file contains your cloud account profile and synchronized server records. For an importable backup of your offline device study sessions, use the Device Backup JSON in Settings > Data & Storage.",
       exportedAt: new Date().toISOString(),
       user: {
         id: session.user.id,
@@ -100,11 +104,25 @@ export async function DELETE(request: Request) {
 
     const userId = session.user.id;
 
-    // Perform permanent erasure of user record
+    // Perform permanent erasure of user records and related cloud data
     try {
+      // 1. Delete bookmarks
+      await db.delete(bookmarks).where(eq(bookmarks.userId, userId));
+      // 2. Delete user progress
+      await db.delete(userProgress).where(eq(userProgress.userId, userId));
+      // 3. Delete test attempts (cascades userAnswers in DB schema)
+      await db.delete(testAttempts).where(eq(testAttempts.userId, userId));
+      // 4. Delete sessions and accounts
+      await db.delete(sessions).where(eq(sessions.userId, userId));
+      await db.delete(accounts).where(eq(accounts.userId, userId));
+      // 5. Delete user record
       await db.delete(users).where(eq(users.id, userId));
     } catch (dbErr) {
-      console.warn("[AccountAPI] DB delete warning:", dbErr);
+      console.error("[AccountAPI] DB erasure failed:", dbErr);
+      return NextResponse.json(
+        { error: "Database error during account erasure. Account data was not deleted." },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
