@@ -34,7 +34,7 @@ describe("Settings Pages Unit Tests", () => {
 
       // Check current-value summary displays
       expect(screen.getByText(/Professional • Target/)).toBeInTheDocument();
-      expect(screen.getByText(/System theme • Follows device motion/)).toBeInTheDocument();
+      expect(screen.getByText(/Light theme • Follows device motion/)).toBeInTheDocument();
     });
   });
 
