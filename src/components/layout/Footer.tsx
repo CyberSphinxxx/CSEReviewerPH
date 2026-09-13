@@ -81,6 +81,12 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/cse/exam-guide" className="hover:text-brand-700 transition flex items-center gap-1.5 font-semibold text-slate-900">
+                  <Award className="w-3.5 h-3.5 text-brand-600" />
+                  CSE Exam Guide & Venues
+                </Link>
+              </li>
+              <li>
                 <Link href="/exam-info" className="hover:text-brand-700 transition flex items-center gap-1.5">
                   <Award className="w-3.5 h-3.5 text-slate-400" />
                   CSE-PPT Exam Overview
