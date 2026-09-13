@@ -102,17 +102,25 @@ export default function AppearanceSettingsPage() {
                 onClick={() => handleThemeChange(t.id)}
                 className={`p-4 rounded-xl border text-left transition flex flex-col justify-between ${
                   isSelected
-                    ? "border-brand-600 dark:border-brand-500 bg-brand-50/60 dark:bg-brand-950/40 ring-1 ring-brand-600 dark:ring-brand-500 shadow-2xs"
+                    ? "border-brand-600 dark:border-brand-400 bg-highlight dark:bg-brand-950 ring-1 ring-brand-600 dark:ring-brand-400 shadow-2xs"
                     : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
-                  <div className="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                  <div
+                    className={`p-2 rounded-lg transition ${
+                      isSelected
+                        ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
                     <Icon className="w-4 h-4" />
                   </div>
                   <div
                     className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                      isSelected ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 dark:border-slate-700"
+                      isSelected
+                        ? "border-brand-600 dark:border-brand-400 bg-brand-600 dark:bg-brand-500 text-white"
+                        : "border-slate-300 dark:border-slate-700"
                     }`}
                   >
                     {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
@@ -122,7 +130,13 @@ export default function AppearanceSettingsPage() {
                   <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white block mb-1">
                     {t.name}
                   </span>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                  <p
+                    className={`text-[11px] leading-relaxed transition ${
+                      isSelected
+                        ? "text-slate-700 dark:text-slate-200 font-medium"
+                        : "text-slate-500 dark:text-slate-400"
+                    }`}
+                  >
                     {t.description}
                   </p>
                 </div>
@@ -196,11 +210,11 @@ export default function AppearanceSettingsPage() {
             <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-1.5">
               Selected Choice State
             </span>
-            <div className="p-2.5 rounded-xl border border-brand-600 dark:border-brand-500 bg-brand-50 dark:bg-brand-950/40 flex items-center justify-between">
-              <span className="text-xs font-semibold text-brand-900 dark:text-brand-200">
+            <div className="p-2.5 rounded-xl border border-brand-600 dark:border-brand-400 bg-highlight dark:bg-brand-950 flex items-center justify-between">
+              <span className="text-xs font-semibold text-brand-950 dark:text-white">
                 Option B: Qualified examinee meeting eligibility benchmarks
               </span>
-              <span className="p-1 rounded-full bg-brand-600 text-white">
+              <span className="p-1 rounded-full bg-brand-600 dark:bg-brand-500 text-white">
                 <Check className="w-3 h-3" />
               </span>
             </div>
