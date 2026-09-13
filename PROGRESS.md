@@ -2,7 +2,148 @@
 
 *Handoff & status log for autonomous unattended operation per AGENTS.md §9.*
 
-## 🎉 Status: Comprehensive Settings System & Site-Page Recommendations Fully Implemented & Verified
+## 🎉 Status: AuthModal Refined & Dedicated Authentication Pages Implemented
+
+The sign in and create account experience has been upgraded with a focused single-column modal (`AuthModal`), shared reusable presentation component (`AuthForm`), show/hide password toggling, compliant RA 10173 data privacy disclosures, guest study continuation ("Continue without an account"), and dedicated two-column desktop pages for direct routes (`/sign-in`, `/create-account`, `/forgot-password`). All gates passed (`npm run verify` exit code 0 and Playwright E2E 19/19 specs passing).
+
+### Done:
+1. **Shared `AuthForm` Architecture (`src/components/auth/AuthForm.tsx`)**:
+   - Reusable across both the modal and dedicated pages.
+   - Supports `"sign-in"`, `"create-account"`, and `"forgot-password"` modes.
+   - Refined Sign In copy: Title: "Welcome back", Subtitle: "Sign in to sync your study progress across devices.", placeholder: "Enter your password" (removed inappropriate 8-character placeholder from sign in), "Forgot password?" link, and "New to CSE Reviewer? Create a free account".
+   - Refined Create Account copy: Title: "Create your free account", Subtitle: "Save your study progress and continue reviewing on any device.", Display Name field with placeholder "Juan Dela Cruz" and helper "This is how your name appears in your reviewer profile.", password helper "Use at least 8 characters.", and "Already have an account? Sign in".
+   - Password Show/Hide Toggle: Accessible eye/eye-off toggle button inside the password input allowing examinees to inspect their credentials.
+   - Guest Study Continuation: Added "Continue without an account" secondary action allowing uninterrupted guest reviewing.
+   - RA 10173 Privacy Box: Updated disclosure citing both email and display name storage, with a direct link to `/privacy`.
+   - Comprehensive error & loading states: Tailored messages for invalid email, wrong password, short passwords, existing accounts, and network errors.
+2. **Accessible Single-Column `AuthModal` (`src/components/auth/AuthModal.tsx`)**:
+   - Strictly single-column (`max-width: 520px; width: calc(100vw - 32px)`), `rounded-[20px]`, elevated shadow, and soft backdrop blur.
+   - Accessible keyboard & dialog behavior: Close button, Escape key closing, backdrop click closing, body scroll lock, autofocus, focus restoration, and tab trap.
+   - Retains post-authentication offline progress migration screen when guest exam attempts or bookmarks are present in `LocalStorageService`.
+3. **Dedicated Authentication Pages (`/sign-in`, `/create-account`, `/forgot-password`)**:
+   - `src/components/auth/AuthPageLayout.tsx`: 2-column layout on desktop (`lg`) featuring left-hand progress preview card ("Keep your study progress with you.", Diagnostic Mock Exam 84.5% score preview, target competency accuracy, cloud sync reassurance) and right-hand authentication card. Collapses to 1-column on mobile.
+   - Created `/sign-in`, `/create-account`, and `/forgot-password` routes with Next.js metadata.
+4. **Testing & Verification**:
+   - `tests/unit/components/auth-form.test.tsx`: 10 comprehensive unit tests covering validation, toggles, mode switches, and guest continuation.
+   - `tests/unit/components/auth-modal.test.tsx`: Updated tests verifying new copy, Escape key, and dialog behavior.
+   - `tests/unit/components/auth-pages.test.tsx`: Unit tests verifying dedicated pages render correctly.
+   - `tests/e2e/auth-modal.spec.ts`: End-to-end visual tests with screenshots captured for Sign In modal, Create Account modal, `/sign-in`, `/create-account`, and `/forgot-password`.
+
+### Verified:
+- **`npm run check:architecture`**: ✅ **PASSED** (0 engine violations; `src/features/exam-engine` untouched).
+- **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with code 0).
+- **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
+- **`npm run test`**: ✅ **PASSED** (233 tests across 43 test files passing).
+- **`npm run build`**: ✅ **PASSED** (Production build compiled cleanly; all 53 static routes generated).
+- **`npm run verify`**: ✅ **PASSED** (`typecheck` → `lint` → `check:architecture` → `test` → `build` exit code 0).
+- **`npx playwright test`**: ✅ **PASSED** (19/19 E2E specs passing).
+- **Visual Browser Verification**: ✅ **PASSED** (High-fidelity screenshots captured for Sign In modal, Create Account modal, and dedicated pages).
+
+### Blocked:
+- None.
+
+### Needs Human:
+- None.
+
+### Next:
+- Continue to subsequent items in the product plan.
+
+---
+
+Default theme and dark mode contrast issues have been resolved, and a scalable design system for interface themes has been established. All gates passed (`npm run verify` exit code 0 and `npm run test:e2e` passing 15/15 specs).
+
+### Done:
+1. **Default to Light Mode on Fresh Visits**:
+   - Updated `DEFAULT_APPEARANCE_PREFERENCES.theme` in `src/lib/preferences/preferences-service.ts` from `"system"` to `"light"`.
+   - Updated pre-hydration script in `src/app/layout.tsx` so fresh visitors receive clean Light Mode immediately with no dark header or layout mismatch.
+   - Updated unit and integration tests in `tests/unit/preferences/preferences-service.test.ts` and `tests/unit/settings/settings-pages.test.tsx`.
+2. **Scalable Theme System via Semantic CSS Variables**:
+   - Defined semantic CSS tokens in `src/app/globals.css` (`--highlight`, `--highlight-foreground`, `--highlight-border`) in both `:root` and `.dark` scopes.
+   - Extended `tailwind.config.ts` with semantic color mappings (`highlight`, `card`, `primary`, `secondary`, `muted`, `accent`, `destructive`, `border`, `input`, `ring`) and missing `brand-950` (`#080d1a`) and `gold-950` (`#451a03`) shades.
+   - Any new theme can now be added simply by defining an alternative CSS variable set (e.g., `[data-theme="sepia"]`, `[data-theme="oled"]`, or custom exam themes).
+3. **Fixed Dark Mode Active Selection & Illegible Text**:
+   - Fixed the issue where active radio choices, navigation items, and exam cards rendered gray-on-light illegible text in Dark Mode due to missing `brand-950` fallback.
+   - `/settings/appearance`: Selection cards and live preview now use deep midnight surfaces (`dark:bg-brand-950`), crisp pure white titles (`dark:text-white`), readable secondary descriptions (`dark:text-slate-200`), and high-contrast blue check indicators (`dark:border-brand-400 dark:text-brand-300`).
+   - `/settings/layout`: Active sidebar navigation now uses `bg-highlight text-highlight-foreground dark:bg-brand-950 dark:text-white dark:border-brand-700/80`.
+   - `/settings/study`, `/settings/reading`, `/settings/dashboard`: High-contrast active states applied across all buttons and choice cards.
+   - Landing page (`HeroExamLevelSelector`, `SubtestExplorer`, `page.tsx`): Polished dark mode background, card, and text tokens for complete visual harmony.
+
+### Verified:
+- **`npm run check:architecture`**: ✅ **PASSED** (0 engine violations; `src/features/exam-engine` untouched).
+- **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with code 0).
+- **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
+- **`npm run test`**: ✅ **PASSED** (217 tests across 41 test files passing).
+- **`npm run build`**: ✅ **PASSED** (Production build compiled cleanly with all static routes generated).
+- **`npm run verify`**: ✅ **PASSED** (`typecheck` → `lint` → `check:architecture` → `test` → `build` exit code 0).
+- **`npx playwright test`**: ✅ **PASSED** (15/15 E2E specs passing).
+- **Visual Browser Verification**: ✅ **PASSED** (Screenshots captured and verified for default light homepage and high-contrast dark theme settings).
+
+### Blocked:
+- None.
+
+### Needs Human:
+- None.
+
+### Next:
+- Continue to subsequent items in the product plan.
+
+---
+
+## Status: CSE Exam Guide and Official CSC Resources Fully Implemented & Verified
+
+A dedicated, comprehensive public **CSE Exam Guide** (`/cse/exam-guide` and supporting subroutes) has been implemented, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` passing 15/15 specs).
+
+### Done:
+1. **Core Data Modeling & Security (`src/lib/exam-guide/`)**:
+   - `OfficialSource`: Structured source citations retaining titles, URLs, publisher ("Civil Service Commission"), publication dates, PST verification timestamps, and superseding audit trails.
+   - `ExamSession`: Calendar data for confirmed 2027 sessions (14 March 2027 and 8 August 2027, 350,000 examinees each, target results, unpopulated testing-center notices) and historical completed 9 August 2026 session.
+   - `TestingCenter`: Complete 15-region historical dataset (60+ localities) for 9 August 2026 with amendment tracking:
+     - Masbate City (Region V) and Tangub City (Region X) marked as `added` via Announcement No. 04, s. 2026.
+     - Calbayog City (Region VIII) marked as `changed` with `previousLocality: "Catbalogan City"`; Catbalogan City preserved as `Superseded`.
+     - Caloocan City (NCR) marked as `removed`.
+   - `CscRegionalOffice`: Directory of all 16 CSC Regional Offices with official `csc.gov.ph` URLs, verified physical addresses, hotlines, emails, and designated application systems.
+   - `csc-domain.ts`: Strict allowlist security for official domains (`csc.gov.ph`, `www.csc.gov.ph`, `ocseas.csc.gov.ph`, `services.csc.gov.ph`, `erpo.csc.gov.ph`, `exam.csc.gov.ph`). Rejects open-redirects, lookalikes, and spoofing attempts. Returns `rel="noopener noreferrer"`.
+   - `finder-service.ts`: Querying and filtering by session, region, search keyword, level, and advisory priority.
+2. **UI Components (`src/components/exam-guide/`)**:
+   - `ExamGuideHero`: Prominent Notice of Non-Affiliation and Editorial Independence disclaimer, title, description, and quick anchor jump buttons.
+   - `AdvisoryAlertBanner`: High-priority alert banner rendering urgent weather suspensions (e.g., NCR 9 August 2026 weather suspension) and amendments with links to signed circulars.
+   - `ExamScheduleSection` (`#schedule`): Confirmed 2027 calendar cards and historical archives with examinee counts, filing rules, target results, and announcement links.
+   - `TestingCenterFinder` (`#testing-centers`): 4-control filter (Session, Region, Locality Search, Level). Features the mandatory Terminology Clarification Box defining Testing Center vs. Application Office vs. School Assignment vs. Room Assignment.
+   - `ApplicationGuideSection` (`#how-to-apply`): 12-step visual walkthrough from announcement to exam day, highlighting first-come first-served slot quotas, in-person appearance requirements, and anti-fixer warnings.
+   - `RequirementsSection` (`#requirements`): Sourced checklist of documentary requirements (CS Form 100, 4 identical passport photos with handwritten nametag and signature, valid government ID criteria, ₱500 fee, statutory age/citizenship/3-month frequency rules).
+   - `SchoolAssignmentSection` (`#school-assignment`): Instructions for Online Notice of School Assignment (eNOSA v3) on `erpo.csc.gov.ph`. Zero personal data/credential collection guarantee.
+   - `ExamDaySection` (`#exam-day`): Before leaving checklist, strictly prohibited items, permitted items, strict 7:45 AM gate closure warning, and single continuous timer protocol notice.
+   - `ResultsSection` (`#results`): Official passer list release guidelines, OCSERGS rating lookup, Certification of Eligibility claiming, and links to government careers.
+   - `OfficialLinksDirectory` (`#official-links`): Categorized official external links with domain badges. Scopes Region I OCSEAS login with restriction notice and warning helper; provides universal OCSEAS Region Selector for general entry.
+   - `RegionalOfficeDirectory` (`#regional-offices`): Complete directory of 16 CSC Regional Offices with official regional URLs, contact directory, and portal assignments.
+   - `SourcesPanel` (`#sources`): Collapsible audit trail of all 14 cited official announcements and circulars with PST timestamps and report outdated info link.
+3. **Public Routes & Navigation**:
+   - `/cse/exam-guide`: Full public interactive page with desktop two-column layout and mobile sequential flow.
+   - `/cse/exam-guide/[section]`: Static subroutes supporting `/schedule`, `/testing-centers`, `/how-to-apply`, `/requirements`, `/exam-day`, `/results`, and `/official-links` with `generateStaticParams()` and section-specific SEO metadata.
+   - `Header.tsx`: Added "Exam Guide" to desktop navigation and "CSE Exam Guide" to mobile navigation.
+   - `Footer.tsx`: Added "CSE Exam Guide & Venues" to Guides & Resources footer links.
+   - `sitemap.ts`: Added `/cse/exam-guide` and all 7 subroutes to XML sitemap.
+
+### Verified:
+- **`npm run check:architecture`**: ✅ **PASSED** (0 engine violations; `src/features/exam-engine` untouched).
+- **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with code 0).
+- **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
+- **`npm run test`**: ✅ **PASSED** (217 tests across 41 test files passing, including 24 dedicated unit tests in `tests/unit/exam-guide/` and integration tests in `tests/integration/exam-guide/`).
+- **`npm run build`**: ✅ **PASSED** (Next.js 15 production build compiled; all 50 static pages successfully generated).
+- **`npm run verify`**: ✅ **PASSED** (`typecheck` → `lint` → `check:architecture` → `test` → `build` exit code 0).
+- **`npx playwright test`**: ✅ **PASSED** (All 15 E2E tests passing: 5/5 in `tests/e2e/exam-guide.spec.ts` and 10/10 in `tests/e2e/exam-flow.spec.ts`).
+- **Visual Browser Verification**: ✅ **PASSED** (Full visual verification executed via Playwright Chromium on desktop 1280x900 and mobile 390x844 viewports. Screenshots saved to artifacts).
+
+### Blocked:
+- None.
+
+### Needs Human:
+- None for implementation or deployment. When official CSC announcements are released for 2027 testing centers, staff can populate them into `src/lib/exam-guide/csc-data.ts`.
+
+### Next:
+- Continue to subsequent items in the product plan.
+
+---
 
 All tasks and recommendations from `# Settings and site-page recommendations` have been implemented, tested, and verified with all gates passing (`npm run verify` exit code 0):
 
