@@ -9,36 +9,28 @@ import {
   type TargetExamConfig,
   type StoredMistakeItem,
 } from "@/lib/storage";
+import { usePreferences } from "@/lib/preferences";
+import { getNextBestStepRecommendation } from "./recommendation-engine";
+import { TodayActionCard } from "./TodayActionCard";
+import { ExamCalendarCard } from "./ExamCalendarCard";
+import { PracticeActivityGrid } from "./PracticeActivityGrid";
+import { SubjectProgressList } from "./SubjectProgressList";
+import { RecentSessionsList } from "./RecentSessionsList";
+import { DataStorageSection } from "./DataStorageSection";
 import {
-  getNextBestStepRecommendation,
-} from "@/features/dashboard/recommendation-engine";
-import {
+  Target,
   Award,
-  BookOpen,
+  Flame,
   CheckCircle2,
   Clock,
-  Flame,
-  ArrowRight,
-  TrendingUp,
-  AlertTriangle,
-  Bookmark,
-  History,
-  Target,
-  Download,
-  Upload,
-  RotateCcw,
-  ShieldCheck,
-  Calendar,
-  Settings2,
-  CloudUpload,
+  Check,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useSession } from "@/lib/auth/auth-client";
-import { AuthModal } from "@/components/auth/AuthModal";
 
 export function DashboardView() {
-  const { data: session, refetch: refetchSession } = useSession();
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [cloudSyncing, setCloudSyncing] = useState(false);
+  const { data: session } = useSession();
+  const { preferences } = usePreferences();
   const [history, setHistory] = useState<AttemptSummary[]>([]);
   const [mistakeCount, setMistakeCount] = useState(0);
   const [dueMistakes, setDueMistakes] = useState<StoredMistakeItem[]>([]);
@@ -55,10 +47,6 @@ export function DashboardView() {
     dailyGoal: 25,
   });
   const [dailyAnswered, setDailyAnswered] = useState(0);
-  const [isEditingTarget, setIsEditingTarget] = useState(false);
-  const [editDate, setEditDate] = useState("2027-03-21");
-  const [editName, setEditName] = useState("March 2027 CSE-PPT");
-  const [editGoal, setEditGoal] = useState(25);
 
   const loadDashboardData = () => {
     const savedHistory = LocalStorageService.getAttemptHistory();
@@ -73,16 +61,13 @@ export function DashboardView() {
     setBookmarkCount(savedBookmarks.length);
 
     const streak = LocalStorageService.getStudyStreak();
-    setStreakDays(streak.currentStreak || (savedHistory.length > 0 ? 1 : 0));
+    setStreakDays(streak.currentStreak);
 
     const readiness = LocalStorageService.getSubjectReadiness();
     setSubjectReadiness(readiness);
 
     const config = LocalStorageService.getTargetExamConfig();
     setTargetConfig(config);
-    setEditDate(config.targetDate);
-    setEditName(config.examName);
-    setEditGoal(config.dailyGoal);
     setDailyAnswered(LocalStorageService.getDailyQuestionsAnswered());
   };
 
@@ -100,117 +85,26 @@ export function DashboardView() {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  const handleExportBackup = () => {
-    const json = LocalStorageService.exportAllDataAsJson();
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `csereviewph-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    setFeedbackMessage("Backup exported successfully!");
-    setTimeout(() => setFeedbackMessage(null), 4000);
-  };
-
-  const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const content = event.target?.result as string;
-      const res = LocalStorageService.importDataFromJson(content);
-      if (res.success) {
-        setFeedbackMessage("Backup restored successfully!");
-        loadDashboardData();
-      } else {
-        alert(`Failed to restore backup: ${res.error || "Unknown error"}`);
-      }
-      setTimeout(() => setFeedbackMessage(null), 4000);
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  };
-
-  const handleResetData = () => {
-    if (
-      confirm(
-        "Are you sure you want to reset all your progress? This will delete all local test history, bookmarks, and mistake records."
-      )
-    ) {
-      LocalStorageService.clearAllGuestData();
-      loadDashboardData();
-      setFeedbackMessage("All local data has been reset.");
-      setTimeout(() => setFeedbackMessage(null), 4000);
-    }
-  };
-
-  const handleCloudSync = async () => {
-    if (!session?.user) {
-      setAuthModalOpen(true);
-      return;
-    }
-    setCloudSyncing(true);
-    try {
-      const res = await LocalStorageService.syncGuestDataToCloud();
-      if (res.success) {
-        setFeedbackMessage(`Progress synced to cloud! (${res.synced?.attempts ?? 0} exams)`);
-      } else {
-        setFeedbackMessage(res.error || "Sync completed.");
-      }
-    } catch {
-      setFeedbackMessage("Sync failed. Please check network connection.");
-    } finally {
-      setCloudSyncing(false);
-      setTimeout(() => setFeedbackMessage(null), 4000);
-    }
-  };
-
-  const handleSaveTarget = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newConfig: TargetExamConfig = {
-      targetDate: editDate,
-      examName: editName.trim() || "Target Exam",
-      dailyGoal: Math.max(5, Math.min(200, Number(editGoal) || 25)),
-    };
-    LocalStorageService.saveTargetExamConfig(newConfig);
-    setTargetConfig(newConfig);
-    setIsEditingTarget(false);
-    setFeedbackMessage("Target exam date & daily pacing goal updated!");
-    setTimeout(() => setFeedbackMessage(null), 4000);
-  };
-
-  // Target Exam Countdown Math
-  const targetTime = new Date(targetConfig.targetDate).getTime();
-  const diffTimeMs = targetTime - Date.now();
-  const daysUntilExam = Math.max(0, Math.ceil(diffTimeMs / (1000 * 60 * 60 * 24)));
-  const weeksUntilExam = Math.floor(daysUntilExam / 7);
-  const dailyProgressPercent = Math.min(
-    100,
-    Math.round((dailyAnswered / (targetConfig.dailyGoal || 25)) * 100)
-  );
-
-  // Compute aggregate statistics
+  // Compute aggregate statistics truthfully (D01: No invented numbers!)
   const totalTests = history.length;
   const avgAccuracy =
     totalTests > 0
       ? Number((history.reduce((acc, h) => acc + h.percentage, 0) / totalTests).toFixed(1))
-      : 74.5; // realistic default baseline for new learners
+      : null;
 
   const passedTests = history.filter((h) => h.passed).length;
   const estimatedQuestionsAnswered =
     totalTests > 0
       ? history.reduce((acc, h) => acc + (h.totalQuestions || 10), 0)
       : 0;
-  const studyStreak = streakDays;
 
-  const subtestAccuracies = subjectReadiness.map((s) => ({
-    name: s.subjectName,
-    accuracy: s.accuracyPercentage,
-  }));
+  const subtestAccuracies = subjectReadiness
+    .filter((s) => s.questionsAnswered > 0)
+    .map((s) => ({
+      name: s.subjectName,
+      accuracy: s.accuracyPercentage,
+    }));
+
   const recommendation = getNextBestStepRecommendation(
     history,
     dueMistakes,
@@ -218,23 +112,51 @@ export function DashboardView() {
     subtestAccuracies
   );
 
+  const greetingName = session?.user?.name
+    ? `Welcome back, ${session.user.name}`
+    : "Your study space";
+
+  const streakText = LocalStorageService.formatDayStreak(streakDays);
+
+  const isCompact = preferences.dashboard.spacing === "compact";
+  const { showExamCalendar, showActivityCalendar, showStreakSummary, showSubjectProgress, showRecentSessions } =
+    preferences.dashboard;
+  const allOptionalHidden =
+    !showExamCalendar && !showActivityCalendar && !showStreakSummary && !showSubjectProgress && !showRecentSessions;
+
   return (
-    <div className="py-8 px-4 sm:px-6 lg:px-8 animate-page-enter">
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-200/80">
+    <div className={`animate-page-enter ${isCompact ? "py-4 px-4 sm:px-6 lg:px-8" : "py-7 px-4 sm:px-6 lg:px-8"}`}>
+      <div className={`max-w-7xl mx-auto ${isCompact ? "space-y-4" : "space-y-7"}`}>
+        {/* Top Header: Greeting, Pacing Context, and Quick Launch */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-3 border-b border-slate-200 dark:border-slate-800">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">User Dashboard</h1>
-            <p className="text-slate-600 text-sm mt-1">
-              Personalized study pacing and readiness analytics based on your practice history.
+            <div className="flex items-center gap-2 mb-1">
+              <span className="px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/60 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800 text-xs font-semibold">
+                Civil Service Exam &bull; Professional &amp; Subprofessional
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              {greetingName}
+            </h1>
+            <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-0.5">
+              Personalized daily study pacing and practice accuracy based on your sessions.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/settings/dashboard"
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs sm:text-sm font-semibold shadow-2xs transition"
+              title="Customize dashboard layout"
+            >
+              <SlidersHorizontal className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+              <span className="hidden sm:inline">Customize View</span>
+            </Link>
+
             <Link
               href="/exams/professional/quick"
               prefetch={true}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold shadow-sm transition"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-700 text-white text-xs sm:text-sm font-bold shadow-sm transition"
             >
               <Clock className="w-4 h-4" />
               <span>Start Quick Drill</span>
@@ -242,495 +164,159 @@ export function DashboardView() {
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* PRIORITY 1: Next Best Step Recommendation Panel */}
-        {/* ========================================================================= */}
-        <section aria-labelledby="recommended-step-heading" className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            <div className="space-y-2.5 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`px-2.5 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider ${
-                    recommendation.urgency === "urgent"
-                      ? "bg-rose-100 text-rose-800 border border-rose-200"
-                      : recommendation.urgency === "high"
-                      ? "bg-brand-100 text-brand-800 border border-brand-200"
-                      : recommendation.urgency === "medium"
-                      ? "bg-amber-100 text-amber-800 border border-amber-200"
-                      : "bg-slate-100 text-slate-700 border border-slate-200"
-                  }`}
-                >
-                  {recommendation.tag}
-                </span>
-                {recommendation.badgeCount !== undefined && recommendation.badgeCount > 0 && (
-                  <span className="text-xs font-bold text-rose-600">
-                    {recommendation.badgeCount} due for review
-                  </span>
-                )}
-              </div>
-
-              <h2 id="recommended-step-heading" className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                {recommendation.title}
-              </h2>
-
-              <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-                {recommendation.description}
-              </p>
-
-              {recommendation.subtext && (
-                <div className="text-xs text-slate-500 font-medium pt-0.5">
-                  {recommendation.subtext}
-                </div>
-              )}
-            </div>
-
-            <div className="shrink-0 flex flex-col sm:flex-row lg:flex-col gap-3">
-              <Link
-                href={recommendation.actionHref}
-                prefetch={true}
-                className={`inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-bold text-sm shadow-sm transition text-white ${
-                  recommendation.urgency === "urgent"
-                    ? "bg-rose-600 hover:bg-rose-700 shadow-rose-600/20"
-                    : "bg-slate-900 hover:bg-slate-800 shadow-slate-900/20"
-                }`}
-              >
-                <span>{recommendation.actionLabel}</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* 4 Stat Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-semibold uppercase">Overall Accuracy</span>
-              <Target className="w-4 h-4 text-brand-600" />
-            </div>
-            <div className="text-3xl font-black text-slate-900">{avgAccuracy}%</div>
-            <div className="text-xs text-emerald-600 font-medium mt-1 flex items-center gap-1">
-              <TrendingUp className="w-3 h-3" /> Target: 80%+
-            </div>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-semibold uppercase">Tests Completed</span>
-              <Award className="w-4 h-4 text-gold-500" />
-            </div>
-            <div className="text-3xl font-black text-slate-900">{totalTests}</div>
-            <div className="text-xs text-slate-500 font-medium mt-1">
-              {passedTests} passed ({totalTests > 0 ? Math.round((passedTests / totalTests) * 100) : 0}%)
-            </div>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-semibold uppercase">Study Streak</span>
-              <Flame className="w-4 h-4 text-amber-500" />
-            </div>
-            <div className="text-3xl font-black text-slate-900">{studyStreak} days</div>
-            <div className="text-xs text-amber-600 font-medium mt-1">Keep it up!</div>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between text-slate-500 mb-2">
-              <span className="text-xs font-semibold uppercase">Items Answered</span>
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-            </div>
-            <div className="text-3xl font-black text-slate-900">{estimatedQuestionsAnswered}</div>
-            <div className="text-xs text-slate-500 font-medium mt-1">Across all sessions</div>
-          </div>
-        </div>
-
-        {/* Target Exam Date Countdown & Daily Pacing Card */}
-        <div className="bg-gradient-to-br from-slate-900 via-brand-950 to-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-md border border-slate-800 relative overflow-hidden">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
-                  <span>Target Exam Pacing</span>
-                </span>
-                <span className="text-xs text-slate-400 font-medium">{targetConfig.examName}</span>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                {daysUntilExam > 0 ? (
-                  <>
-                    <span className="text-gold-400">{daysUntilExam} Days</span> Remaining
-                    <span className="text-sm font-normal text-slate-400 ml-2">
-                      ({weeksUntilExam} weeks until exam)
-                    </span>
-                  </>
-                ) : (
-                  <span className="text-gold-400">Exam Day is Here!</span>
-                )}
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-                Maintain consistent daily practice to build familiarity and stamina for the continuous 3-hour CSE-PPT.
-              </p>
-            </div>
-
-            {/* Daily Goal Gauge & Action */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 bg-white/10 backdrop-blur-md p-4 rounded-xl border border-white/10 shrink-0">
-              <div className="space-y-1.5 min-w-[180px]">
-                <div className="flex items-center justify-between text-xs font-bold">
-                  <span className="text-slate-300">Daily Goal</span>
-                  <span className="text-gold-400">{dailyAnswered} / {targetConfig.dailyGoal} items</span>
-                </div>
-                <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-500 ${
-                      dailyAnswered >= targetConfig.dailyGoal ? "bg-emerald-400" : "bg-gold-400"
-                    }`}
-                    style={{ width: `${dailyProgressPercent}%` }}
-                  />
-                </div>
-                <div className="text-[11px] text-slate-400">
-                  {dailyAnswered >= targetConfig.dailyGoal
-                    ? "✓ Daily goal accomplished!"
-                    : `${targetConfig.dailyGoal - dailyAnswered} more items to hit today's target`}
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/exams/professional/quick"
-                  prefetch={true}
-                  className="px-3.5 py-2 rounded-lg bg-gold-500 hover:bg-gold-400 text-slate-950 font-bold text-xs shadow-sm transition text-center"
-                >
-                  Practice Now
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingTarget(!isEditingTarget)}
-                  className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition"
-                  title="Adjust Target Exam or Daily Goal"
-                >
-                  <Settings2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Inline Edit Form */}
-          {isEditingTarget && (
-            <form
-              onSubmit={handleSaveTarget}
-              className="mt-6 pt-6 border-t border-white/10 grid grid-cols-1 sm:grid-cols-4 gap-3 text-slate-900 animate-fade-in"
-            >
-              <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">Target Exam Preset</label>
-                <select
-                  value={editDate}
-                  onChange={(e) => {
-                    setEditDate(e.target.value);
-                    if (e.target.value === "2027-03-21") setEditName("March 2027 CSE-PPT");
-                    if (e.target.value === "2027-08-08") setEditName("August 2027 CSE-PPT");
-                  }}
-                  className="w-full text-xs rounded-lg p-2 bg-white border border-slate-300"
-                >
-                  <option value="2027-03-21">March 21, 2027 (CSE-PPT Cycle 1)</option>
-                  <option value="2027-08-08">August 8, 2027 (CSE-PPT Cycle 2)</option>
-                  <option value="custom">Custom Date...</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">Target Date</label>
-                <input
-                  type="date"
-                  value={editDate === "custom" ? "" : editDate}
-                  onChange={(e) => setEditDate(e.target.value)}
-                  className="w-full text-xs rounded-lg p-2 bg-white border border-slate-300"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">Daily Question Goal</label>
-                <input
-                  type="number"
-                  min={5}
-                  max={200}
-                  value={editGoal}
-                  onChange={(e) => setEditGoal(Number(e.target.value))}
-                  className="w-full text-xs rounded-lg p-2 bg-white border border-slate-300"
-                  required
-                />
-              </div>
-
-              <div className="flex items-end gap-2">
-                <button
-                  type="submit"
-                  className="flex-1 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition"
-                >
-                  Save Target
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingTarget(false)}
-                  className="px-3 py-2 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
-        </div>
-
-        {/* Action Hub: Mistake Bank & Bookmarks & Quick Launch */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Mistake Bank Card */}
-          <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-rose-700 font-bold text-sm">
-                  <AlertTriangle className="w-4 h-4 text-rose-600" />
-                  <span>Mistake Bank</span>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-xs font-bold">
-                  {mistakeCount} {mistakeCount === 1 ? "question" : "questions"}
-                </span>
-              </div>
-              <h3 className="text-xl font-bold text-slate-900">Practice Missed Questions</h3>
-              <p className="text-sm text-slate-600 mt-2">
-                Questions you previously answered incorrectly are automatically saved here so you can review them and close knowledge gaps.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center gap-3">
-              <Link
-                href="/dashboard/mistakes"
-                prefetch={true}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow transition"
-              >
-                <span>Open Mistake Bank</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Bookmarks Card */}
-          <div className="bg-white p-6 sm:p-7 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 text-brand-700 font-bold text-sm">
-                  <Bookmark className="w-4 h-4 text-brand-600" />
-                  <span>Saved Bookmarks</span>
-                </div>
-                <span className="px-2.5 py-0.5 rounded-full bg-brand-100 text-brand-800 text-xs font-bold">
-                  {bookmarkCount} saved
-                </span>
-              </div>
-              <h3 className="text-xl font-bold text-slate-900">Review Bookmarked Items</h3>
-              <p className="text-sm text-slate-600 mt-2">
-                Revisit challenging questions, memorable formulas, or critical Philippine Constitution provisions you flagged for review.
-              </p>
-            </div>
-            <div className="mt-6 flex items-center gap-3">
-              <Link
-                href="/dashboard/bookmarks"
-                prefetch={true}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-700 hover:bg-brand-800 text-white font-bold text-xs shadow transition"
-              >
-                <span>View Bookmarks</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-        </div>
-
         {/* Feedback Alert */}
         {feedbackMessage && (
-          <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium flex items-center justify-between shadow-sm animate-fade-in">
+          <div
+            role="alert"
+            className="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 text-xs sm:text-sm font-medium flex items-center justify-between shadow-xs animate-fade-in"
+          >
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>{feedbackMessage}</span>
             </div>
             <button
               onClick={() => setFeedbackMessage(null)}
-              className="text-xs text-emerald-700 hover:text-emerald-900 font-bold"
+              className="text-xs text-emerald-700 dark:text-emerald-300 font-bold px-1"
             >
               ✕
             </button>
           </div>
         )}
 
-        {/* Subtest Mastery Overview */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-brand-700" />
-                <span>Civil Service Subtest Readiness</span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Current accuracy targets dynamically calculated from your recorded test sessions.
-              </p>
+        {/* All Optional Sections Hidden Banner */}
+        {allOptionalHidden && (
+          <div className="p-3.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/30 border border-brand-200 dark:border-brand-800 text-xs text-brand-900 dark:text-brand-200 flex items-center justify-between">
+            <span>Optional sections are hidden. Your daily study action and progress recording remain active.</span>
+            <Link href="/settings/dashboard" className="font-bold underline ml-2 shrink-0 hover:opacity-80">
+              Restore sections in Settings &rarr;
+            </Link>
+          </div>
+        )}
+
+        {/* Truthful Stat Tiles */}
+        <div className={`grid ${showStreakSummary ? "grid-cols-2 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-3"} gap-3.5 sm:gap-4`}>
+          {/* Practice Accuracy */}
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider">
+                Practice accuracy
+              </span>
+              <Target className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+              {avgAccuracy !== null ? `${avgAccuracy}%` : "Not measured yet"}
+            </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+              {avgAccuracy !== null
+                ? `Study target: 80% (${totalTests} ${totalTests === 1 ? "test" : "tests"})`
+                : "Take a diagnostic to establish baseline"}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {subjectReadiness.slice(0, 4).map((sub) => {
-              const pct = sub.accuracyPercentage;
-              const isPassing = pct >= 80;
+          {/* Tests Completed */}
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider">
+                Tests completed
+              </span>
+              <Award className="w-4 h-4 text-gold-500" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{totalTests}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+              {totalTests > 0
+                ? `${passedTests} met target (${Math.round((passedTests / totalTests) * 100)}%)`
+                : "No tests completed yet"}
+            </div>
+          </div>
 
-              return (
-                <div key={sub.subjectId} className="p-4 rounded-xl border border-slate-200 space-y-2">
-                  <div className="flex items-center justify-between text-sm font-semibold">
-                    <span className="text-slate-800">{sub.subjectName}</span>
-                    <span
-                      className={`font-mono text-xs font-bold px-2 py-0.5 rounded ${
-                        isPassing
-                          ? "bg-emerald-100 text-emerald-800"
-                          : "bg-amber-100 text-amber-800"
-                      }`}
-                    >
-                      {pct}% {isPassing ? "Mastered" : "Review Needed"}
-                    </span>
-                  </div>
-                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full ${
-                        isPassing ? "bg-emerald-500" : "bg-amber-500"
-                      }`}
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    {sub.questionsAnswered > 0
-                      ? `${sub.correctCount} of ${sub.questionsAnswered} answered correctly`
-                      : "Diagnostic baseline"}
-                  </div>
-                </div>
-              );
-            })}
+          {/* Study Streak (Optional) */}
+          {showStreakSummary && (
+            <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+              <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
+                <span className="text-xs font-bold uppercase tracking-wider">
+                  Study streak
+                </span>
+                <Flame className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">{streakText}</div>
+              <div className="text-xs text-amber-700 dark:text-amber-400 font-medium mt-1">
+                {streakDays > 0 ? "Daily streak active" : "Answer 1 question today"}
+              </div>
+            </div>
+          )}
+
+          {/* Items Answered */}
+          <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+            <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider">
+                Items answered
+              </span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+              {estimatedQuestionsAnswered}
+            </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-1">
+              Across all practice sessions
+            </div>
           </div>
         </div>
 
-        {/* Recent Test History */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <History className="w-5 h-5 text-brand-700" />
-              <span>Recent Test History</span>
-            </h2>
-            <Link
-              href="/dashboard/history"
-              prefetch={true}
-              className="text-xs font-semibold text-brand-700 hover:text-brand-800"
-            >
-              View Full History &rarr;
-            </Link>
+        {/* 2-Column Responsive Layout (2/3 Study, 1/3 Personal Context) */}
+        <div className={`grid grid-cols-1 ${showExamCalendar ? "lg:grid-cols-3" : "lg:grid-cols-1"} ${isCompact ? "gap-4 sm:gap-5" : "gap-6 sm:gap-7"} items-start`}>
+          {/* Main Study Column */}
+          <div className={`${showExamCalendar ? "lg:col-span-2" : "lg:col-span-1"} ${isCompact ? "space-y-4" : "space-y-6 sm:space-y-7"}`}>
+            {/* Priority 1: Dominant "For today" Action (Permanent anchor) */}
+            <TodayActionCard
+              recommendation={recommendation}
+              mistakeCount={mistakeCount}
+              dueMistakeCount={dueMistakes.length}
+              bookmarkCount={bookmarkCount}
+              dailyAnswered={dailyAnswered}
+              dailyGoal={targetConfig.dailyGoal || 25}
+            />
+
+            {/* Optional Activity Grid */}
+            {showActivityCalendar && (
+              <PracticeActivityGrid streakDays={streakDays} />
+            )}
+
+            {/* Optional Subject Progress */}
+            {showSubjectProgress && (
+              <SubjectProgressList subjects={subjectReadiness} />
+            )}
+
+            {/* Optional Recent Sessions */}
+            {showRecentSessions && (
+              <RecentSessionsList history={history} />
+            )}
           </div>
 
-          {history.length > 0 ? (
-            <div className="divide-y divide-slate-100">
-              {history.slice(0, 5).map((item) => (
-                <div key={item.id} className="py-3.5 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold text-sm text-slate-900">{item.title}</h4>
-                    <span className="text-xs text-slate-400">
-                      {new Date(item.date).toLocaleDateString()} &bull; {item.mode} mode
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={`font-bold font-mono text-sm ${
-                        item.passed ? "text-emerald-600" : "text-rose-600"
-                      }`}
-                    >
-                      {item.percentage}% ({item.passed ? "Passed" : "Needs Review"})
-                    </span>
-                    <Link
-                      href={`/results/${item.id}`}
-                      className="px-3 py-1 text-xs font-semibold rounded-lg bg-slate-100 hover:bg-brand-50 hover:text-brand-700 transition"
-                    >
-                      Review
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8 text-slate-500">
-              <p className="text-sm font-medium">No tests completed yet.</p>
-              <Link
-                href="/exams/professional/quick"
-                className="mt-3 inline-block text-xs font-bold text-brand-700 hover:text-brand-800"
-              >
-                Take your first Quick Test now &rarr;
-              </Link>
+          {/* Personal Context Column */}
+          {showExamCalendar && (
+            <div className={`${isCompact ? "space-y-4" : "space-y-6"}`}>
+              {/* "Your Exam" Card */}
+              <ExamCalendarCard
+                config={targetConfig}
+                dailyAnswered={dailyAnswered}
+                onConfigChange={(newConfig) => {
+                  setTargetConfig(newConfig);
+                  setFeedbackMessage("Target exam date & daily pacing goal updated!");
+                  setTimeout(() => setFeedbackMessage(null), 4000);
+                }}
+              />
+
+              {/* Compact Local Storage & Data Controls */}
+              <DataStorageSection
+                onDataChanged={loadDashboardData}
+                onShowMessage={(msg) => {
+                  setFeedbackMessage(msg);
+                  setTimeout(() => setFeedbackMessage(null), 4000);
+                }}
+              />
             </div>
           )}
         </div>
-
-        {/* Guest Device Storage & Data Control (RA 10173 Compliance) */}
-        <div className="bg-slate-900 text-white rounded-2xl p-6 sm:p-8 shadow-sm">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-1 max-w-xl">
-              <div className="flex items-center gap-2 text-gold-400 text-xs font-bold uppercase tracking-wider">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Guest Offline Storage &bull; RA 10173 Compliant</span>
-              </div>
-              <h3 className="text-lg font-bold text-white">Your Progress is Saved Locally</h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                You do not need an account to practice. All your test attempts, bookmarks, and mistake bank items are securely preserved in your browser. You can export a backup, transfer to another device, or wipe your data anytime.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={handleCloudSync}
-                disabled={cloudSyncing}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold transition shadow-sm disabled:opacity-50"
-              >
-                <CloudUpload className="w-3.5 h-3.5" />
-                <span>{cloudSyncing ? "Syncing..." : session?.user ? "Sync to Cloud" : "Save to Cloud Account"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleExportBackup}
-                className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 transition shadow-sm"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export Backup (JSON)</span>
-              </button>
-
-              <label className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-slate-700 transition shadow-sm cursor-pointer">
-                <Upload className="w-3.5 h-3.5" />
-                <span>Restore Backup</span>
-                <input
-                  type="file"
-                  accept=".json"
-                  onChange={handleImportFile}
-                  className="hidden"
-                />
-              </label>
-
-              <button
-                type="button"
-                onClick={handleResetData}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900 text-rose-300 hover:text-white text-xs font-semibold border border-rose-800/40 transition"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>Reset All Data</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <AuthModal
-          isOpen={authModalOpen}
-          onClose={() => setAuthModalOpen(false)}
-          onSuccess={() => {
-            refetchSession();
-            handleCloudSync();
-          }}
-        />
       </div>
     </div>
   );
