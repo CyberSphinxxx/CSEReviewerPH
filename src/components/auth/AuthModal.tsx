@@ -1,18 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { signIn, signUp } from "@/lib/auth/auth-client";
 import { LocalStorageService } from "@/lib/storage";
+import { AuthForm, AuthMode } from "./AuthForm";
 import {
   X,
-  Mail,
-  Lock,
-  User,
-  ShieldCheck,
   CloudUpload,
   CheckCircle2,
-  AlertCircle,
   Loader2,
 } from "lucide-react";
 
@@ -20,78 +15,115 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  initialMode?: AuthMode;
 }
 
-export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
+export function AuthModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  initialMode = "sign-in",
+}: AuthModalProps) {
   const [mounted, setMounted] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<AuthMode>(initialMode);
 
   // Sync state after successful auth
   const [authComplete, setAuthComplete] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<string | null>(null);
 
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Update mode when initialMode changes or modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setAuthComplete(false);
+      setSyncResult(null);
+    }
+  }, [isOpen, initialMode]);
+
+  // Save and restore previous focus, trap focus, and handle escape
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Store element that had focus before opening modal
+    previousFocusRef.current = document.activeElement as HTMLElement | null;
+
+    // Body scroll lock
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    // Focus first input
+    const timer = setTimeout(() => {
+      if (modalRef.current) {
+        const firstInput = modalRef.current.querySelector<HTMLElement>(
+          "input:not([disabled]), button:not([disabled])"
+        );
+        firstInput?.focus();
+      }
+    }, 50);
+
+    // Escape listener
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      // Simple focus trap
+      if (e.key === "Tab" && modalRef.current) {
+        const focusables = modalRef.current.querySelectorAll<HTMLElement>(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (focusables.length === 0) return;
+
+        const firstElement = focusables[0];
+        const lastElement = focusables[focusables.length - 1];
+
+        if (e.shiftKey) {
+          if (document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement.focus();
+          }
+        } else {
+          if (document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      clearTimeout(timer);
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+      }
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen || !mounted) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
-
-    try {
-      if (isSignUp) {
-        if (!name.trim()) {
-          setError("Please enter your name.");
-          setLoading(false);
-          return;
-        }
-
-        const res = await signUp.email({
-          email: email.trim(),
-          password,
-          name: name.trim(),
-        });
-
-        if (res.error) {
-          setError(res.error.message || "Failed to create account. Please try again.");
-          setLoading(false);
-          return;
-        }
-      } else {
-        const res = await signIn.email({
-          email: email.trim(),
-          password,
-        });
-
-        if (res.error) {
-          setError(res.error.message || "Invalid email or password.");
-          setLoading(false);
-          return;
-        }
-      }
-
+  const handleAuthSuccess = () => {
+    // Check if there are local guest attempts to sync
+    const guestHistory = LocalStorageService.getAttemptHistory();
+    const guestBookmarks = LocalStorageService.getBookmarks();
+    if (guestHistory.length === 0 && guestBookmarks.length === 0) {
+      if (onSuccess) onSuccess();
+      onClose();
+    } else {
       setAuthComplete(true);
-      setLoading(false);
-
-      // Check if there are local guest attempts to sync
-      const guestHistory = LocalStorageService.getAttemptHistory();
-      const guestBookmarks = LocalStorageService.getBookmarks();
-      if (guestHistory.length === 0 && guestBookmarks.length === 0) {
-        if (onSuccess) onSuccess();
-        onClose();
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
-      setLoading(false);
     }
   };
 
@@ -126,63 +158,70 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const guestBookmarksCount = LocalStorageService.getBookmarks().length;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/55 p-4 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !syncing) {
+          onClose();
+        }
+      }}
+    >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200 relative my-auto overflow-hidden"
+        ref={modalRef}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="auth-modal-title"
+        aria-labelledby={authComplete ? "sync-modal-title" : "auth-form-title"}
+        className="w-[calc(100vw-32px)] max-w-[520px] rounded-[20px] bg-white dark:bg-slate-900 shadow-[0_24px_80px_rgba(15,23,42,0.24)] border border-slate-200/80 dark:border-slate-800 p-6 sm:p-7 relative my-auto overflow-hidden"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
-          <h2 id="auth-modal-title" className="text-xl font-bold text-slate-900 flex items-center gap-2">
-            {authComplete ? (
-              <>
-                <CloudUpload className="h-5 w-5 text-brand-600" />
-                Sync Offline Progress
-              </>
-            ) : isSignUp ? (
-              "Create Reviewer Account"
-            ) : (
-              "Sign In to Sync Progress"
-            )}
-          </h2>
-          <button
-            onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition"
-            aria-label="Close dialog"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-200 transition"
+          aria-label="Close dialog"
+        >
+          <X className="h-5 w-5" />
+        </button>
 
-        {/* Sync Step (if auth completed and guest data found) */}
+        {/* Post-auth Guest Data Sync Screen */}
         {authComplete ? (
-          <div className="space-y-4 py-2">
-            <div className="rounded-xl bg-brand-50 border border-brand-200 p-4">
+          <div className="space-y-5 py-2">
+            <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
+              <CloudUpload className="h-5 w-5 text-brand-600 dark:text-brand-400" />
+              <h2 id="sync-modal-title" className="text-xl font-bold tracking-tight">
+                Sync Offline Progress
+              </h2>
+            </div>
+
+            <div className="rounded-xl bg-brand-50/80 dark:bg-brand-950/40 border border-brand-200/80 dark:border-brand-900/60 p-4">
               <div className="flex items-center gap-3 mb-2">
-                <CheckCircle2 className="h-6 w-6 text-emerald-600 shrink-0" />
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <div>
-                  <h3 className="text-sm font-semibold text-brand-900">Signed In Successfully!</h3>
-                  <p className="text-xs text-brand-700">
+                  <h3 className="text-sm font-semibold text-brand-900 dark:text-brand-200">
+                    Signed In Successfully!
+                  </h3>
+                  <p className="text-xs text-brand-700 dark:text-brand-300">
                     We detected offline study progress on this device.
                   </p>
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-2 gap-2 text-center text-xs">
-                <div className="bg-white rounded-lg p-2 border border-brand-100">
-                  <div className="text-lg font-bold text-slate-900">{guestExamsCount}</div>
-                  <div className="text-slate-500">Practice Exams</div>
+                <div className="bg-white dark:bg-slate-900 rounded-lg p-2.5 border border-brand-100 dark:border-brand-900/50">
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">
+                    {guestExamsCount}
+                  </div>
+                  <div className="text-slate-500 dark:text-slate-400">Practice Exams</div>
                 </div>
-                <div className="bg-white rounded-lg p-2 border border-brand-100">
-                  <div className="text-lg font-bold text-slate-900">{guestBookmarksCount}</div>
-                  <div className="text-slate-500">Bookmarks</div>
+                <div className="bg-white dark:bg-slate-900 rounded-lg p-2.5 border border-brand-100 dark:border-brand-900/50">
+                  <div className="text-lg font-bold text-slate-900 dark:text-white">
+                    {guestBookmarksCount}
+                  </div>
+                  <div className="text-slate-500 dark:text-slate-400">Bookmarks</div>
                 </div>
               </div>
             </div>
 
             {syncResult && (
-              <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-xs text-emerald-800 font-medium text-center">
+              <div className="rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60 p-3 text-xs text-emerald-800 dark:text-emerald-300 font-medium text-center">
                 {syncResult}
               </div>
             )}
@@ -212,139 +251,20 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                   if (onSuccess) onSuccess();
                   onClose();
                 }}
-                className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 transition"
+                disabled={syncing}
+                className="rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-2.5 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
               >
                 Skip for Now
               </button>
             </div>
           </div>
         ) : (
-          /* Sign In / Sign Up Form */
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div
-                className="flex items-start gap-2 rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-700"
-                role="alert"
-              >
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            {isSignUp && (
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Full Name / Display Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    required
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Juan Dela Cruz"
-                    className="w-full rounded-xl border border-slate-300 pl-9 pr-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="juan@example.ph"
-                  className="w-full rounded-xl border border-slate-300 pl-9 pr-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-                <input
-                  type="password"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="At least 8 characters"
-                  className="w-full rounded-xl border border-slate-300 pl-9 pr-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-brand-600 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 transition disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {isSignUp ? "Creating account..." : "Signing in..."}
-                </>
-              ) : isSignUp ? (
-                "Create Account & Sync"
-              ) : (
-                "Sign In"
-              )}
-            </button>
-
-            <div className="text-center text-xs text-slate-500">
-              {isSignUp ? (
-                <>
-                  Already have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSignUp(false);
-                      setError(null);
-                    }}
-                    className="font-semibold text-brand-600 hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </>
-              ) : (
-                <>
-                  New to CSE Reviewer?{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSignUp(true);
-                      setError(null);
-                    }}
-                    className="font-semibold text-brand-600 hover:underline"
-                  >
-                    Create free account
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* RA 10173 Compliance Note */}
-            <div className="rounded-xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-500 flex items-start gap-2">
-              <ShieldCheck className="h-4 w-4 text-brand-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-semibold text-slate-700">Data Privacy (RA 10173):</span>{" "}
-                Creating an account is 100% optional. We only collect your email to preserve your
-                study history across devices. You may export or permanently delete your records at
-                any time.
-              </div>
-            </div>
-          </form>
+          <AuthForm
+            mode={mode}
+            onModeChange={(newMode) => setMode(newMode)}
+            onSuccess={handleAuthSuccess}
+            onGuestContinue={onClose}
+          />
         )}
       </div>
     </div>,
