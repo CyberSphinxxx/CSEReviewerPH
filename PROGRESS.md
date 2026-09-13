@@ -2,9 +2,43 @@
 
 *Handoff & status log for autonomous unattended operation per AGENTS.md §9.*
 
-## 🎉 Status: All Enhancement Phases, UI Overhaul & Codex Design System Complete & Fully Verified
+## 🎉 Status: Comprehensive Settings System & Site-Page Recommendations Fully Implemented & Verified
 
-All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE Implementation)**, **Phase 3 (User Experience & Audit)**, **Enhancement Phase 1 (Testing Experience & Runner UX)**, **Enhancement Phase 2 (Pedagogy, Analytics & Spaced Repetition)**, **Enhancement Phase 3 (PWA & Offline-First Support)**, **Enhancement Phase 4 (Better Auth Cloud Sync & RA 10173 Privacy Controls)**, **Enhancement Phase 5 (Homepage UI Redesign & Interactive Product Showcase)**, and **Phase 5.5 (Codex Design & Product Hierarchy Overhaul)** have been completed, tested, and verified with all gates passing (`npm run verify` exit code 0 and `npm run test:e2e` exit code 0).
+All tasks and recommendations from `# Settings and site-page recommendations` have been implemented, tested, and verified with all gates passing (`npm run verify` exit code 0):
+
+1. **Unified Preferences System (`src/lib/preferences/`)**:
+   - Single versioned, validated, typed preference model (`UserPreferences`) covering:
+     - **Study Plan**: Exam & Level, Verified Schedule vs Custom target date, Daily question goal (bounded 5–200), Show daily goal, Week starts on (Monday/Sunday), Study timezone (`Asia/Manila` with non-retroactive streak explanation), Show streak.
+     - **Appearance**: Theme (`system` | `light` | `dark`), Motion (`device` | `reduce`).
+     - **Text & Reading**: Font size (`standard` 16px | `large` 18px | `extra-large` 20px), Line spacing (`standard` 1.6 | `spacious` 1.8), Reading width (`standard` 65ch | `narrow` 52ch).
+     - **Dashboard Layout**: Density (`comfortable` | `compact`), optional section toggles (`showExamCalendar`, `showActivityCalendar`, `showStreakSummary`, `showSubjectProgress`, `showRecentSessions`).
+     - **Privacy**: Independent `analyticsConsent`, `adsConsent` (both default `false` / opt-in), and `localCheckInTracking`.
+   - Distinct scoped category resets (`resetCategory('study')`, etc.) and `resetAllPreferences()` without deleting progress.
+   - Reactive cross-tab and cross-component updates via `usePreferences` hook and storage event dispatching.
+
+2. **All 8 Functional Settings Sections Implemented**:
+   - `/settings`: Overview dashboard with current-value summaries and category cards.
+   - `/settings/study`: Exam & level consequences, target date provenance, daily goal presets + custom, week starts on. Grouped Save/Cancel form contract with dirty state tracking.
+   - `/settings/appearance`: Live UI preview with heading, paragraph, button, input, selected state, and subject progress row. Autosave with quiet status.
+   - `/settings/reading`: Font size, line spacing, and reading width applied via CSS variables `--reading-font-size`, `--reading-line-height`, and `--reading-max-width`. Live prose preview.
+   - `/settings/dashboard`: Density toggle and individual optional section visibility switches. "Restore Default Layout" button.
+   - `/settings/account`: Guest explanation, display name and email viewing, RA 10173 data portability export download, confirmed deletion modal with cascade safeguards.
+   - `/settings/data`: Truthful storage status ("Saved on this device", "Changes waiting to sync", etc.), category-accurate sync, versioned JSON backup download, schema-validated backup restore, and distinct scoped reset buttons.
+   - `/settings/privacy`: Plain-language explanation of essential storage, independent analytics/ads opt-ins, check-in tracking toggle, and direct links to public Privacy Notice and data erasure.
+   - `/settings/help`: Lightweight index linking to FAQ, Support, Question reporting guidance, Accessibility accommodations, non-affiliation disclaimer, and safe diagnostic browser details with one-click copy.
+
+3. **Prerequisites & Backend Fixes Resolved**:
+   - **Account Deletion Safeguards (`/api/user/account`)**: Real database error status propagation (500 on DB failure) instead of false success; cascades across `testAttempts`, `bookmarks`, `userProgress`, `sessions`, `accounts`, and `users`.
+   - **Privacy Portability Export**: Authenticated export explicitly labeled as RA 10173 Data Portability Export, distinct from device backups.
+   - **Default Consent**: Cookie consent initialized to `false` (explicit opt-in) for both analytics and advertising.
+   - **Local Storage Helper**: `saveTargetExamConfig` returns boolean indicating success/failure instead of swallowing errors.
+
+4. **Integration with Existing Pages**:
+   - `UserNav`: Quick navigation to Dashboard, Settings, and Help for both guest and authenticated users.
+   - `DashboardView`: Respects layout density (`compact` / `comfortable`) and conditionally renders calendar, activity, streak, subject progress, and recent sessions. Added "Customize View" link.
+   - `DataStorageSection`: Links directly to `/settings/data`.
+   - `ExamRunner`: Display menu contains "More reading settings" link directly to `/settings/reading`.
+   - `Footer` and `Header`: Direct links to Settings, Help, and Cookie preferences.
 
 ---
 
@@ -12,35 +46,162 @@ All tasks for **Phase 0 (Bootstrap)**, **Phase 1 (Foundation)**, **Phase 2 (CSE 
 - **`npm run check:architecture`**: ✅ **PASSED** (Strictly zero hardcoded exam-slug branching inside `src/features/exam-engine/`).
 - **`npm run typecheck`**: ✅ **PASSED** (`tsc --noEmit` exited with 0 errors).
 - **`npm run lint`**: ✅ **PASSED** (`eslint .` exited with 0 errors and 0 warnings).
-- **`npm run test`**: ✅ **PASSED** (170 unit & real PostgreSQL integration tests across 34 test suites passing).
-- **`npm run build`**: ✅ **PASSED** (Next.js 15 production build generated, all 33 routes compiled and prerendered).
-- **`npm run test:e2e`**: ✅ **PASSED** (9 Playwright end-to-end browser test suites passing, including the new calm diagnostic study plan preview and practice navigation check).
+- **`npm run test`**: ✅ **PASSED** (193 unit & real PostgreSQL integration tests across 38 test suites passing).
+- **`npm run build`**: ✅ **PASSED** (Next.js 15 production build compiled; all 42 static & dynamic routes prerendered).
+- **`npm run verify`**: ✅ **PASSED** (`typecheck` → `lint` → `check:architecture` → `test` → `build` exit code 0).
+- **Live HTTP Check**: ✅ **PASSED** (All 10 routes `/settings`, `/settings/study`, `/settings/appearance`, `/settings/reading`, `/settings/dashboard`, `/settings/account`, `/settings/data`, `/settings/privacy`, `/settings/help`, `/dashboard` returned HTTP 200 OK).
 
 ---
 
-## 🎯 Hero Section & Navigation Simplification: "Know what to study next"
-1. **Simplified Information Budget & Hero Copy**:
+## 💎 Four Final Hero & Navigation Refinements
+1. **Diagnostic Terminology Alignment**:
+   - Updated hero explanation to: *"Take a 10-question diagnostic. See which subjects need attention, then continue with a recommended drill."*
+   - Harmonizes copy with the primary action button (`Start Free Diagnostic`).
+2. **Clean White Selection Card (Removed Top Gold Line)**:
+   - Removed `border-t-2 border-t-amber-500/80` from `HeroExamLevelSelector.tsx`.
+   - Card presents a clean white container (`bg-white`) with subtle slate border and soft shadow.
+3. **Tightened Inter-Section Vertical Rhythm**:
+   - Reduced hero bottom padding and top padding of `#what-happens-next`.
+   - Section header `WHAT HAPPENS NEXT \n Start with 10 questions.` and step cards peek directly into the desktop viewport near the fold without scrolling.
+4. **Clarified Navigation States ("Dashboard")**:
+   - Renamed header progress button from `"My Progress"` to `"Dashboard"`.
+   - New visitors see only neutral links and `"Sign In"`. Returning or authenticated users see `"Dashboard"`.
+5. **Mobile Reading Order & Responsive Layout**:
+   - Countdown is in a compact utility line above the hero.
+   - Preserves exact mobile reading order: Headline → Short explanation → Choose level → Start diagnostic → What happens next.
+   - Start Free Diagnostic button is full width (`w-full`), and selection card stacks cleanly below text.
+6. **Full Quality Verification**:
+   - `npm run verify`: ✅ Passed (exit code 0).
+   - `npm run test:e2e`: ✅ Passed (10/10 Playwright tests passing).
+
+---
+
+## 🌟 Hero Page Refinement: Clean Hero, "What Happens Next" Section & Dedicated Trust Claims
+1. **Clean Hero & Termination**:
+   - Completely removed the crowded bottom horizontal strip (which previously combined countdown, checkmarks, and inline flow dots into a single row).
+   - Hero now ends cleanly after the visitor chooses an exam level and sees the primary start action: `Promise → Choose level → Start diagnostic`.
+2. **Subtle Countdown Utility Line Below Navigation**:
+   - Placed the target exam countdown as a quiet utility line directly beneath top navigation: `● Next CSE-PPT: March 21, 2027 · 189 days remaining`.
+3. **Refined Hero Content & Compact Selection Card**:
+   - Category: `PHILIPPINE CIVIL SERVICE EXAM REVIEWER`.
+   - Headline: `Know what to \n study next.` with `study next.` in brand blue.
+   - Two-sentence explanation: *"Start with a short practice test. See what needs work, then review at your own pace."*
+   - Refined quiet link: `See how the diagnostic works →` linking smoothly to `#what-happens-next`.
+   - Compact selection card with consolidated single-line level descriptions:
+     - **Professional**: *For second-level positions · Includes Analytical Ability*
+     - **Subprofessional**: *For first-level positions · Includes Clerical Ability*
+   - Clear selected states with solid navy border, filled blue radio with white center, visible focus rings, and single dominant CTA button.
+4. **New Full-Width Section Directly Below Hero: "WHAT HAPPENS NEXT"**:
+   - Header: `WHAT HAPPENS NEXT \n Start with 10 questions. Get a clear next step.`.
+   - 3-step structured cards (desktop horizontal, mobile vertical):
+     - **01 Take a short diagnostic**: *Answer a balanced set across your exam coverage.*
+     - **02 See where to focus**: *Review the areas that need more attention.*
+     - **03 Practise with purpose**: *Continue with a recommended topic drill.*
+   - Anchored with `id="what-happens-next"` and `id="how-it-works"` alias.
+5. **Dedicated Trust Claims Section: "WHY STUDY WITH CSEREVIEWPH.COM"**:
+   - Full 3-column pedagogical excellence layout:
+     - **Original practice questions**: *Every question is written for this platform and follows the published CSE scope.*
+     - **Detailed answer explanations**: *Review why an answer is correct and strengthen the underlying concept.*
+     - **Built for both CSE levels**: *Choose Professional or Subprofessional and study the subjects included in your level.*
+6. **Full Quality Verification (`npm run verify` & `npm run test:e2e`)**:
+   - `npm run check:architecture`: ✅ Passed (0 hardcoded engine branches).
+   - `npm run typecheck`: ✅ Passed (0 errors).
+   - `npm run lint`: ✅ Passed (0 errors, 0 warnings).
+   - `npm run test`: ✅ Passed (171 unit & real Postgres integration tests across 34 suites).
+   - `npm run build`: ✅ Passed (Next.js 15 production build compiled in 15.2s, 33 routes static/SSG prerendered).
+   - `npm run test:e2e`: ✅ Passed (10/10 Playwright tests passing in 43.4s).
+
+---
+
+## 🚀 Homepage Hero Redesign: Exam-Level Selection Card & Single Free Diagnostic CTA
+1. **Removed Complex Diagnostic Outcome Preview**:
+   - Strictly removed `HeroDiagnosticPlanPreview` containing misleading sample 62% readiness score, subtest meters, mini dashboard, sparkle badge, and thick gold/blue borders.
+2. **Interactive Exam-Level Selection Card (`HeroExamLevelSelector`)**:
+   - Right-side card on pale off-white background with subtle gold accent line and soft shadow.
+   - Header: `START YOUR REVIEW` label and `Choose your exam level` title.
+   - Distinct radio choices for **Professional** (*Includes Analytical Ability*) and **Subprofessional** (*Includes Clerical Ability*).
+   - Dynamic diagnostic routing: `/exams/professional/quick` vs `/exams/subprofessional/quick`.
+   - Exactly one large primary CTA button on the entire hero: `[Start Free Diagnostic →]`.
+   - Single reassurance line: `10 questions · About 10 minutes \n No account required`.
+   - Quiet helper link: `Not sure which level? Compare the two levels →` linking smoothly to `#compare-levels`.
+3. **Streamlined Left-Side Messaging**:
+   - Product category label: `PHILIPPINE CIVIL SERVICE EXAM REVIEWER`.
+   - Headline: `Know what to \n study next.` with `study next.` in brand blue (`text-brand-600`) as the focal point.
+   - Focused two-sentence explanation: *"Start with a short practice test. See what needs work, then review at your own pace."*
+   - Quiet link: `How it works →` linking to `#how-it-works`.
+   - Completely eliminated audience tabs (`First-time taker`, etc.) to unify all visitor types into one diagnostic onboarding flow.
+4. **Relocated Secondary Information Below the Fold**:
+   - Dedicated trust strip below the hero with target exam countdown, 3 trust claims, and learning flow indicator.
+   - Anchored Exam Level Comparison / Subtest Explorer with `id="compare-levels"`.
+5. **Full Quality Verification (`npm run verify` & `npm run test:e2e`)**:
+   - `npm run check:architecture`: ✅ Passed (0 hardcoded engine branching).
+   - `npm run typecheck`: ✅ Passed (0 errors).
+   - `npm run lint`: ✅ Passed (0 errors, 0 warnings).
+   - `npm run test`: ✅ Passed (171 unit & real Postgres integration tests across 34 suites).
+   - `npm run build`: ✅ Passed (Next.js 15 production build compiled, 33 routes prerendered).
+   - `npm run test:e2e`: ✅ Passed (10/10 Playwright tests passing in 42.6s).
+
+---
+
+## 📝 Exam Runner UX Simplification: Focused & Calm Assessment Experience
+1. **Isolated Assessment Header (No Standard Website Navigation or Hamburger Menu)**:
+   - Eliminated standard website header links and hamburger menus within the runner view.
+   - Designed a 3-area desktop header: Left (`← Save & Exit`), Center (`Quick Test · 10 Questions`), Right (`[Display ▾]`, `[Scratchpad]`, `[05:30]`, `[Question Map]`, `[Submit]`).
+2. **Accidental-Exit Protection ("Save & Exit" Navigation)**:
+   - Added `← Save & Exit` header action on both desktop and mobile.
+   - Interactive confirmation dialog with dynamic copy:
+     - When questions are answered: `Leave this test? Your progress is saved and you can resume this test later. [Keep Practicing] [Save & Leave]`.
+     - When 0 answered: `Leave this test? You have not answered any questions yet. [Keep Practicing] [Leave Test]`.
+   - Safely saves draft session to client storage on confirmation.
+3. **Consolidated Display / Accessibility Dropdown Menu**:
+   - Replaced fragmented standalone icon buttons (`A`, contrast switch, etc.) with a single accessible `[Display ▾]` dropdown menu:
+     - Font size: **Normal** / **Large** / **Extra Large**
+     - High contrast mode toggle switch
+     - Reduce motion toggle switch
+     - Instant feedback mode toggle switch
+4. **Enhanced Progress Hierarchy Above Questions**:
+   - Status elevated to `Question X of Y`, `Progress: X answered · Y flagged · Z remaining`, and a visual mini progress bar.
+5. **Decluttered Choice Rows with Hover/Focus Elimination**:
+   - Clean choice rows featuring bold letter badges `[A]`, clean text, and prominent `✓ Selected` badge.
+   - Choice elimination buttons are concealed by default and reveal on hover (`group-hover:opacity-100`) or keyboard focus, maintaining full accessibility without row clutter.
+6. **Simplified Question Map & Legend**:
+   - Compact legend: `● Answered · ○ Unanswered · ◇ Flagged`.
+   - Clear visual states: Current (navy ring), Answered (solid navy), Flagged (gold badge marker), Unanswered (neutral outline).
+7. **Structured Review Before Submission Modal**:
+   - `[Submit]` opens a summary modal with answered, unanswered, and flagged question counts, offering `[Return to Questions]` and `[Submit Test]`.
+8. **Mobile Focused Header & Tool Sheet**:
+   - Minimalist header (`[← Exit] Question 1 of 10 [05:30] [•••]`) with exam-only tools sheet.
+
+---
+
+## 🎯 Homepage Hero Design Refinement: Stable Headline, Audience Switcher & Single Dominant CTA
+1. **Strictly Stable Headline & Information Hierarchy**:
    - Small category label: `PHILIPPINE CIVIL SERVICE EXAM REVIEWER`
-   - Headline: `Know what to study next.`
-   - Supporting sentence: `Take a free 10-question diagnostic and get a clear view of your strongest and weakest CSE subtests.`
-   - Primary CTA: `[Start Free Diagnostic]` (dominant button leading directly to `/practice`).
-   - Secondary CTA: `[How It Works]` (smoothly scrolls to the `#how-it-works` learning loop).
-   - Three short trust points: `No sign-up required • Professional & Subprofessional • Original questions`.
-   - Quiet countdown: Placed as a subtle utility line (`Next CSE-PPT: March 21, 2027 · ${diffDays} days remaining`).
-2. **Replaced Misleading Simulator with Static Study Plan Preview (`src/components/home/HeroDiagnosticPlanPreview.tsx`)**:
-   - Labeled clearly as `YOUR DIAGNOSTIC PLAN (EXAMPLE PREVIEW)`.
-   - Frames progress as `Estimated readiness: 62%` with a 10-segment visual progress bar (strictly adhering to Addendum §50: does not claim raw score directly equals official CSC general rating).
-   - Shows subtest breakdown: `Numerical Ability: Needs focus` and `Verbal Ability: Strong`.
-   - Actionable outcome: `Next recommended drill: Percentages & Interest · 10 min`.
-   - Single static action: `[Start focused practice]`.
-   - Moved mock interface preview and test structure details below the fold to the `#how-it-works` section.
-3. **Navigation Simplification (`src/components/layout/Header.tsx`)**:
-   - New visitor default: `Practice   Study Guides   How It Works   FAQ      Sign In`
-   - Removed vague "Dashboard" link for first-time visitors; replaced with `My Progress` which is rendered **only** when the user has existing test progress (attempt history, bookmarks, or mistake bank items) or is authenticated.
+   - Headline: `Know what to study next.` (Strictly stable — never rotates or changes randomly).
+   - Intentional Audience Switcher Tabs: `[First-time taker]`, `[Retaking the exam]`, and `[Studying after work]`, dynamically tailoring the supporting copy and diagnostic preview while keeping the headline fixed.
+   - Tailored supporting copy:
+     - First-time taker: `Take a free 10-question diagnostic to identify the CSE subtests that need your attention.`
+     - Retaking the exam: `Find the subtests that are holding your score back and focus your study time where it matters.`
+     - Studying after work: `Use short targeted drills that fit your available time without burning out.`
+2. **Single Visually Dominant Hero Primary CTA**:
+   - Only `[Start Free Diagnostic]` functions as the primary call to action.
+   - Reassurance line: `10 questions · About 10 minutes · No sign-up required`.
+   - Quiet secondary action: `How it works` (clean link to `#how-it-works`).
+   - Learning flow indicator: `Diagnostic → Identify weak area → Targeted drill`.
+3. **Diagnostic Preview Outcome Card (`src/components/home/HeroDiagnosticPlanPreview.tsx`)**:
+   - Removed competing duplicate CTA button (`Start focused practice`).
+   - Replaced with non-interactive outcome report:
+     ```text
+     AFTER YOUR DIAGNOSTIC
+     Your next recommended drill
+     Percentages & Interest · 10-minute focused practice
+     ```
+   - Labeled clearly: `EXAMPLE DIAGNOSTIC OUTCOME` with `Report` tag and gold assessment file accent border (`border-l-4 border-l-amber-500`).
+   - Metric: `Estimated readiness: 62%` (`Practice benchmark · 80% goal` diagnostic baseline).
+   - Quiet tertiary link: `Preview the practice interface →`.
 4. **Full Verification Suite Passed**:
-   - Unit & component tests: `tests/unit/components/home-components.test.tsx` (8/8 passed).
-   - Integration & unit tests: 169 passed across 34 test files.
-   - Playwright E2E tests: `tests/e2e/exam-flow.spec.ts` (9/9 passed in 39s).
+   - Unit tests: `tests/unit/components/home-components.test.tsx` (8/8 passed).
+   - Playwright E2E: `tests/e2e/exam-flow.spec.ts` (10/10 passed in 35.3s).
    - `npm run verify` passed with exit code 0.
 
 ---
@@ -379,3 +540,117 @@ The platform runs with a live Neon serverless PostgreSQL database connected, mig
 - Phase 5: Administration & Question Authoring Portal (Authoring UI, review workflow, user reports).
 - Phase 6: Monetization (Ad placement with RA 10173 consent banner, premium mock exam tiers).
 - Phase 7: New Exams (LET, Nursing, BFP, NAPOLCOM via configuration data).
+
+---
+
+# Dashboard design analysis — 2026-09-13
+
+## Done
+- Completed report-only analysis in .design/review-report.md with competitor browser evidence, calendar/activity behavior, recommended personal study layout, and reusable design-system proposal.
+- Created implementation_plan.md and walkthrough.md; preserved all pre-existing application edits and saved Design Arc preferences.
+
+## Verified
+- npm run verify: PASS, exit 0; 171 tests in 34 files plus typecheck, lint, architecture, and production build.
+- Chromium guest dashboard desktop/mobile, target-editor open/cancel, accessible-name inspection; competitor desktop/mobile and public navigation.
+- No application code changed; full exam E2E suite not rerun.
+
+## Blocked
+- No blocker to delivering this analysis. Current UI has confirmed empty-state sample metrics, 390px-to-478px mobile overflow, and unnamed target-editor controls, documented for future implementation.
+- App browser sandbox failed; successful Playwright checks used the existing installation and an isolated production preview.
+- Complete Design Arc visual validation, authenticated flow, keyboard/screen-reader/zoom checks, and proposed calendar/streak behavior remain outside this analysis's verified scope.
+
+## Needs Human
+- No credential or decision needed to read/use the report. Official exam schedule presets require CSC-source verification before being presented as official; this analysis does not certify the existing 2027 dates.
+
+## Next
+- Use .design/review-report.md as the canonical design review. Recommended direction: personal study day.
+- In a separately requested implementation, fix truthfulness/accessibility, consolidate the visual tokens, expose calendar editing, and build an activity grid with explicit qualifying rules and behavior tests.
+
+---
+
+# Settings recommendations guide — 2026-09-13
+
+## Done
+- Created docs/settings-recommendations.md with eight settings sections plus overview, a later Reminders section, related site-page map, defaults, persistence rules, privacy/data boundaries, UI behavior, rollout phases, and acceptance criteria.
+- Appended task-specific plan and walkthrough while preserving ongoing dashboard changes. This task made documentation changes only.
+
+## Verified
+- Final npm run verify: PASS, exit 0; typecheck, lint, architecture, 179 tests across 36 files, production build.
+- Initial run failed during dashboard prerendering after 171 tests. Closed this task's earlier preview and retried; the cause was not conclusively established. Both logs are retained under .design/evidence/.
+- Reviewed current source and first-party W3C/MDN guidance. No proposed settings UI was implemented or browser-verified.
+
+## Blocked
+- No blocker to the recommendations deliverable. Before implementation claims reliable cloud controls, fix source-observed false-success handling for sync/deletion and verify actual persisted/exported categories.
+
+## Needs Human
+- None for this guide. Reminder delivery and unsupported account-security features require their own implementation prerequisites; no credentials requested or introduced now.
+
+## Next
+- Implement the settings shell and first-release controls from docs/settings-recommendations.md in the existing design system, with behavior tests and browser/E2E verification.
+- Keep advanced reminders, UI translation, and unsupported security controls out of the first release until their complete flows work.
+
+---
+
+# Dashboard Redesign: Personal Study Day (Direction B) Complete — 2026-09-13
+
+## Done
+- **D01 (Truthful Empty Metrics)**:
+  - Eliminated sample backfills (previously 74.5% overall and 75% subtest accuracy for guests with 0 tests).
+  - Unmeasured state now renders `"Not measured yet"` with a welcoming invitation to start a free diagnostic drill.
+  - Fixed `getSubjectReadiness()` in `local-storage-service.ts` to return `0` accuracy percentage and `0` questions answered when total is 0.
+- **D02 (Mobile Navigation)**:
+  - Recomposed `Header.tsx` on narrow viewports (`< md`) with an accessible hamburger menu toggle (`aria-label="Toggle navigation menu"`, `aria-expanded`).
+  - Added collapsible mobile navigation drawer containing Dashboard, Practice, Study Guides, How It Works, and FAQ links.
+  - Eliminated all horizontal overflow at 390px viewport (`document.documentElement.scrollWidth <= 390px`).
+- **D03 (Calendar & Form Accessibility)**:
+  - Associated all form controls in `ExamCalendarCard.tsx` with explicit `htmlFor`/`id` bindings (`target-preset-select`, `custom-target-date`, `daily-question-goal`).
+  - Added keyboard interaction support (`Escape` to cancel and discard, `Enter` to save).
+  - Preserved original values on cancel/invalid input and restored focus to the "Change date" button.
+- **D04 (Dominant "For Today" Action)**:
+  - Replaced multiple competing practice buttons and alarmist red Leitner alerts with a single dominant `TodayActionCard`.
+  - Displays a concise 1-sentence plain-language explanation and a single primary action button.
+  - Moved Mistake Bank and Bookmarks access into quiet secondary utility links below the card.
+- **D05 (Discoverable Exam Target Panel)**:
+  - Created compact `ExamCalendarCard` showing target exam name/level, formatted target date, and days remaining.
+  - Added mini month calendar with month navigation (`<` / `>`) and "Today" button, current day highlighted, and target exam day pinned.
+  - Prominent and discoverable `Change date` button opening the accessible inline editor.
+- **D06 (Navigation Active State)**:
+  - Styled "Dashboard" link in `Header.tsx` as a subtle navigation active state (`text-brand-800 bg-brand-50 border border-brand-200/80 font-semibold`) with `aria-current="page"`.
+  - Reserved filled button styling exclusively for starting study actions.
+- **D07 (Reading Load & Layout Structure)**:
+  - Implemented Direction B (Personal Study Day) 2-column desktop layout (2/3 study column, 1/3 personal context column) and 1-column mobile stack.
+  - Replaced nested cards with clean, scannable rows.
+  - Consolidated data storage/backup into a compact `DataStorageSection` ("Saved on this device · Manage data" with local JSON export, restore, cloud sync, and data reset).
+- **D08 (Progress Terminology)**:
+  - Replaced "Overall Accuracy" with "Practice accuracy".
+  - Labeled 80% benchmark as "Study target: 80%" rather than an official passing benchmark, avoiding overstating readiness.
+  - Displays sample sizes (e.g. "12 of 15 correct") on subject progress rows.
+- **D09 (Streak Presentation & Activity Grid)**:
+  - Fixed "1 days" pluralization bug with `formatDayStreak(days)`.
+  - Created `PracticeActivityGrid` implementing a ~12-week GitHub-style contribution grid using Asia/Manila date keys.
+  - Clearly distinguishes daily check-ins (outlined cell) from active study sessions (shaded green bands).
+  - Highlights today's cell, displays "X active days this week", and states the clear streak rule.
+- **Repository Cleanup & Archival**:
+  - Analyzed root and documentation files to separate active source from completed/historical artifacts.
+  - Created `ARCHIVES/` directory with a descriptive `README.md` catalog.
+  - Moved completed task implementation plan (`implementation_plan.md`), completed walkthrough (`walkthrough.md`), implemented settings specification (`docs/settings-recommendations.md`), historical design review report and screenshots (`.design/` -> `ARCHIVES/design`), and codex configuration (`.codex/` -> `ARCHIVES/codex`).
+  - Resolved `layout.tsx` variable export type constraint in `src/app/(app)/settings/layout.tsx`.
+
+## Verified
+- **`npm run check:architecture`**: ✅ **PASS** (Zero hardcoded exam-identity branching).
+- **`npm run typecheck`**: ✅ **PASS** (`tsc --noEmit` exited with 0 errors).
+- **`npm run lint`**: ✅ **PASS** (`eslint .` exited with 0 errors and 0 warnings).
+- **`npm run test`**: ✅ **PASS** (193 unit & real PostgreSQL integration tests across 38 test files passing).
+- **`npm run build`**: ✅ **PASS** (Next.js production build compiled; all 42 routes prerendered successfully).
+- **`npm run verify`**: ✅ **PASS** (Full verification chain exited with code 0).
+
+## Blocked
+*None.*
+
+## Needs Human
+*None.*
+
+## Next
+- Continue Phase 4 content platform and question bank authoring workflows.
+
+
