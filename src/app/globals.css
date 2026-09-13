@@ -24,6 +24,11 @@
     --input: #e2e8f0;
     --ring: #1e40af;
     --radius: 0.75rem;
+
+    /* Reading Comfort Tokens */
+    --reading-font-size: 1rem;
+    --reading-line-height: 1.6;
+    --reading-max-width: 65ch;
   }
 
   .dark {
@@ -53,12 +58,38 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Reduced motion preference from OS or site setting */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+[data-reduce-motion="reduce"] *,
+[data-reduce-motion="reduce"] ::before,
+[data-reduce-motion="reduce"] ::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+/* Reading container utility */
+.reading-prose {
+  font-size: var(--reading-font-size);
+  line-height: var(--reading-line-height);
+  max-width: var(--reading-max-width);
 }
 
 /* Smooth page transition entry animation */
