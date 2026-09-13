@@ -42,8 +42,8 @@ export function CookieConsentBanner() {
   const [showBanner, setShowBanner] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  const [analyticsAllowed, setAnalyticsAllowed] = useState(true);
-  const [adsAllowed, setAdsAllowed] = useState(true);
+  const [analyticsAllowed, setAnalyticsAllowed] = useState(false);
+  const [adsAllowed, setAdsAllowed] = useState(false);
 
   const handleOpenSettings = useCallback(() => {
     setShowSettings(true);
