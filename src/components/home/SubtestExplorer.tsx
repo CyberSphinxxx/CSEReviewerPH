@@ -136,14 +136,14 @@ export function SubtestExplorer() {
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-xs sm:text-sm whitespace-nowrap transition-all border ${
                 isActive
                   ? "bg-brand-700 text-white border-brand-700 shadow-md shadow-brand-700/20"
-                  : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
+                  : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-300 dark:hover:border-slate-700"
               }`}
             >
-              <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-brand-600"}`} />
+              <Icon className={`w-4 h-4 ${isActive ? "text-white" : "text-brand-600 dark:text-brand-400"}`} />
               <span>{subtest.name}</span>
               <span
                 className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                  isActive ? "bg-white/20 text-white" : "bg-slate-100 text-slate-600"
+                  isActive ? "bg-white/20 text-white" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
                 }`}
               >
                 {subtest.items}Q
@@ -154,34 +154,34 @@ export function SubtestExplorer() {
       </div>
 
       {/* Active Subtest Detail Card */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm transition">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+      <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-sm transition">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
               <span
                 className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
                   activeSubtest.levels === "pro-only"
-                    ? "bg-brand-50 text-brand-700 border border-brand-200"
+                    ? "bg-brand-50 dark:bg-brand-950 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800"
                     : activeSubtest.levels === "subpro-only"
-                    ? "bg-amber-50 text-amber-800 border border-amber-200"
-                    : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    ? "bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                    : "bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
                 }`}
               >
                 {activeSubtest.levelBadge}
               </span>
               <span className="text-xs text-slate-400">&bull;</span>
-              <span className="text-xs font-semibold text-slate-600 flex items-center gap-1">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-slate-400" />
                 Target Pacing: {activeSubtest.timeTarget}
               </span>
             </div>
 
-            <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-              <activeSubtest.icon className="w-6 h-6 text-brand-700" />
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+              <activeSubtest.icon className="w-6 h-6 text-brand-700 dark:text-brand-400" />
               <span>{activeSubtest.name}</span>
             </h3>
 
-            <p className="text-sm text-slate-600 max-w-2xl leading-relaxed">
+            <p className="text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
               {activeSubtest.description}
             </p>
           </div>
@@ -200,13 +200,13 @@ export function SubtestExplorer() {
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Key Topics Checklist */}
           <div className="space-y-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               High-Yield Syllabus Topics
             </h4>
             <div className="space-y-2">
               {activeSubtest.topics.map((topic, idx) => (
-                <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-700">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   <span className="leading-normal">{topic}</span>
                 </div>
               ))}
@@ -214,17 +214,17 @@ export function SubtestExplorer() {
           </div>
 
           {/* Timing & Pacing Advice */}
-          <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-4 space-y-2.5">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-              <Clock className="w-4 h-4 text-brand-600" />
+          <div className="rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200/80 dark:border-slate-800 p-4 space-y-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200">
+              <Clock className="w-4 h-4 text-brand-600 dark:text-brand-400" />
               <span>Timing & Examination Strategy</span>
             </div>
-            <p className="text-xs text-slate-600 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               {activeSubtest.pacingStrategy}
             </p>
-            <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-[11px] text-slate-500">
+            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
               <span>Official CSC Weight: {activeSubtest.items} items</span>
-              <span className="font-semibold text-brand-700">Benchmark: 80.00% Required</span>
+              <span className="font-semibold text-brand-700 dark:text-brand-400">Benchmark: 80.00% Required</span>
             </div>
           </div>
         </div>
