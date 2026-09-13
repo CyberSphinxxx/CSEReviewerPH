@@ -107,7 +107,7 @@ export default function ReadingSettingsPage() {
                 onClick={() => handleSizeChange(item.id as "standard" | "large" | "extra-large")}
                 className={`p-3.5 rounded-xl border text-left transition flex flex-col justify-between ${
                   isSelected
-                    ? "border-brand-600 dark:border-brand-500 bg-brand-50/60 dark:bg-brand-950/40 ring-1 ring-brand-600 dark:ring-brand-500 shadow-2xs"
+                    ? "border-brand-600 dark:border-brand-400 bg-highlight dark:bg-brand-950 ring-1 ring-brand-600 dark:ring-brand-400 shadow-2xs"
                     : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
                 }`}
               >
@@ -117,7 +117,7 @@ export default function ReadingSettingsPage() {
                   </span>
                   <div
                     className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                      isSelected ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 dark:border-slate-700"
+                      isSelected ? "border-brand-600 dark:border-brand-400 bg-brand-600 dark:bg-brand-500 text-white" : "border-slate-300 dark:border-slate-700"
                     }`}
                   >
                     {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
@@ -159,7 +159,7 @@ export default function ReadingSettingsPage() {
                   onClick={() => handleSpacingChange(item.id as "standard" | "spacious")}
                   className={`p-3 rounded-xl border text-left transition flex items-center justify-between ${
                     isSelected
-                      ? "border-brand-600 dark:border-brand-500 bg-brand-50/60 dark:bg-brand-950/40 ring-1 ring-brand-600 dark:ring-brand-500"
+                      ? "border-brand-600 dark:border-brand-400 bg-highlight dark:bg-brand-950 ring-1 ring-brand-600 dark:ring-brand-400 shadow-2xs"
                       : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
                   }`}
                 >
@@ -167,13 +167,15 @@ export default function ReadingSettingsPage() {
                     <span className="font-bold text-xs text-slate-900 dark:text-white block">
                       {item.label}
                     </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className={`text-[11px] transition ${
+                      isSelected ? "text-slate-700 dark:text-slate-200 font-medium" : "text-slate-500 dark:text-slate-400"
+                    }`}>
                       {item.desc}
                     </span>
                   </div>
                   <div
                     className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-                      isSelected ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 dark:border-slate-700"
+                      isSelected ? "border-brand-600 dark:border-brand-400 bg-brand-600 dark:bg-brand-500 text-white" : "border-slate-300 dark:border-slate-700"
                     }`}
                   >
                     {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
@@ -209,7 +211,7 @@ export default function ReadingSettingsPage() {
                   onClick={() => handleWidthChange(item.id as "standard" | "narrow")}
                   className={`p-3 rounded-xl border text-left transition flex items-center justify-between ${
                     isSelected
-                      ? "border-brand-600 dark:border-brand-500 bg-brand-50/60 dark:bg-brand-950/40 ring-1 ring-brand-600 dark:ring-brand-500"
+                      ? "border-brand-600 dark:border-brand-400 bg-highlight dark:bg-brand-950 ring-1 ring-brand-600 dark:ring-brand-400 shadow-2xs"
                       : "border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-slate-900"
                   }`}
                 >
@@ -217,13 +219,15 @@ export default function ReadingSettingsPage() {
                     <span className="font-bold text-xs text-slate-900 dark:text-white block">
                       {item.label}
                     </span>
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className={`text-[11px] transition ${
+                      isSelected ? "text-slate-700 dark:text-slate-200 font-medium" : "text-slate-500 dark:text-slate-400"
+                    }`}>
                       {item.desc}
                     </span>
                   </div>
                   <div
                     className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-                      isSelected ? "border-brand-600 bg-brand-600 text-white" : "border-slate-300 dark:border-slate-700"
+                      isSelected ? "border-brand-600 dark:border-brand-400 bg-brand-600 dark:bg-brand-500 text-white" : "border-slate-300 dark:border-slate-700"
                     }`}
                   >
                     {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
