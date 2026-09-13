@@ -6,6 +6,8 @@ import { AdSenseScript } from "@/components/ads/AdSenseScript";
 import { NavigationProgress } from "@/components/layout/NavigationProgress";
 import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
+
 const baseUrl = getBaseUrl();
 const adsenseClientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
 
@@ -104,13 +106,20 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=localStorage.getItem('csereviewph_user_preferences_v1');var m=window.matchMedia('(prefers-color-scheme: dark)').matches;if(p){var parsed=JSON.parse(p);var t=parsed&&parsed.appearance&&parsed.appearance.theme;if(t==='dark'||(t==='system'&&m)){document.documentElement.classList.add('dark');}}else if(m){document.documentElement.classList.add('dark');}}catch(e){}})()`,
+          }}
+        />
       </head>
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-brand-500 selection:text-white flex flex-col">
-        <NavigationProgress />
-        {children}
-        <CookieConsentBanner />
-        <AdSenseScript />
-        <ServiceWorkerRegister />
+      <body className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-brand-500 selection:text-white flex flex-col transition-colors duration-150">
+        <ThemeProvider>
+          <NavigationProgress />
+          {children}
+          <CookieConsentBanner />
+          <AdSenseScript />
+          <ServiceWorkerRegister />
+        </ThemeProvider>
       </body>
     </html>
   );
