@@ -16,7 +16,7 @@ describe("PreferencesService Unit Tests", () => {
     expect(prefs.study.examId).toBe("cse");
     expect(prefs.study.levelId).toBe("cse-professional");
     expect(prefs.study.dailyGoal).toBe(25);
-    expect(prefs.appearance.theme).toBe("system");
+    expect(prefs.appearance.theme).toBe("light");
     expect(prefs.appearance.reduceMotion).toBe("device");
     expect(prefs.reading.readingTextSize).toBe("standard");
     expect(prefs.dashboard.spacing).toBe("comfortable");
@@ -71,7 +71,7 @@ describe("PreferencesService Unit Tests", () => {
 
     const resetAll = PreferencesService.resetAllPreferences();
     expect(resetAll.success).toBe(true);
-    expect(resetAll.preferences.appearance.theme).toBe("system");
+    expect(resetAll.preferences.appearance.theme).toBe("light");
     expect(resetAll.preferences.reading.readingTextSize).toBe("standard");
     expect(resetAll.preferences.dashboard.spacing).toBe("comfortable");
     expect(resetAll.preferences.dashboard.showExamCalendar).toBe(true);
