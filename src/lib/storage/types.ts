@@ -77,6 +77,19 @@ export interface StudyStreakData {
   longestStreak: number;
   lastActiveDate: string; // YYYY-MM-DD
   activeDates: string[]; // List of YYYY-MM-DD
+  checkInDates?: string[]; // List of YYYY-MM-DD check-in dates
+}
+
+export interface DailyActivityCell {
+  date: string; // YYYY-MM-DD
+  formattedDate: string; // e.g., "Sep 13, 2026"
+  dayOfWeek: number; // 0 = Sunday, 6 = Saturday
+  questionCount: number;
+  hasCheckIn: boolean;
+  sessionsCount: number;
+  activityLevel: 0 | 1 | 2 | 3;
+  isToday: boolean;
+  isFuture: boolean;
 }
 
 export interface SubjectReadinessMetric {
