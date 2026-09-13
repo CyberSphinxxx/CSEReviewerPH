@@ -5,9 +5,10 @@ import { ExamRunner } from "@/features/practice/ExamRunner";
 import type { EngineQuestion, ExamRuleConfig } from "@/features/exam-engine";
 
 // Mock next/navigation
+const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({
-    push: vi.fn(),
+    push: mockPush,
   }),
 }));
 
@@ -75,7 +76,7 @@ describe("ExamRunner Component", () => {
     expect(screen.getByText("10:00")).toBeInTheDocument();
   });
 
-  it("selects choices and updates answer count", () => {
+  it("selects choices and updates progress hierarchy", () => {
     render(
       <ExamRunner
         initialQuestions={mockQuestions}
@@ -84,12 +85,15 @@ describe("ExamRunner Component", () => {
       />
     );
 
-    expect(screen.getByText("0 of 2 answered")).toBeInTheDocument();
+    expect(screen.getByText(/0 answered/i)).toBeInTheDocument();
+    expect(screen.getByText(/2 remaining/i)).toBeInTheDocument();
 
     const choiceBtn = screen.getByText("Alpha Choice");
     fireEvent.click(choiceBtn);
 
-    expect(screen.getByText("1 of 2 answered")).toBeInTheDocument();
+    expect(screen.getByText(/1 answered/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 remaining/i)).toBeInTheDocument();
+    expect(screen.getByText("Selected")).toBeInTheDocument();
   });
 
   it("toggles flag state on current question", () => {
@@ -145,8 +149,89 @@ describe("ExamRunner Component", () => {
     fireEvent.click(submitBtn);
 
     expect(screen.getByText("Review Before Submission")).toBeInTheDocument();
-    expect(screen.getByText("Continue Exam")).toBeInTheDocument();
-    expect(screen.getByText("Submit & View Results")).toBeInTheDocument();
+    expect(screen.getByText("Return to Questions")).toBeInTheDocument();
+    expect(screen.getByText("Submit Test")).toBeInTheDocument();
+  });
+
+  it("renders Save & Exit and handles confirmation modal for unanswered test", () => {
+    render(
+      <ExamRunner
+        initialQuestions={mockQuestions}
+        rules={mockRules}
+        title="Diagnostic Quick Test"
+      />
+    );
+
+    const exitBtn = screen.getByRole("button", { name: /save and exit/i });
+    fireEvent.click(exitBtn);
+
+    expect(screen.getByText("Leave this test?")).toBeInTheDocument();
+    expect(screen.getByText("You have not answered any questions yet.")).toBeInTheDocument();
+    expect(screen.getByText("Keep Practicing")).toBeInTheDocument();
+    expect(screen.getByText("Leave Test")).toBeInTheDocument();
+
+    // Click Keep Practicing to dismiss
+    fireEvent.click(screen.getByText("Keep Practicing"));
+    expect(screen.queryByText("Leave this test?")).not.toBeInTheDocument();
+  });
+
+  it("renders Save & Exit and saves progress for answered test", () => {
+    mockPush.mockClear();
+    render(
+      <ExamRunner
+        initialQuestions={mockQuestions}
+        rules={mockRules}
+        title="Diagnostic Quick Test"
+      />
+    );
+
+    // Answer Q1
+    fireEvent.click(screen.getByText("Alpha Choice"));
+
+    // Click Save & Exit
+    const exitBtn = screen.getByRole("button", { name: /save and exit/i });
+    fireEvent.click(exitBtn);
+
+    expect(screen.getByText("Leave this test?")).toBeInTheDocument();
+    expect(
+      screen.getByText("Your progress is saved and you can resume this test later.")
+    ).toBeInTheDocument();
+
+    // Click Save & Leave
+    fireEvent.click(screen.getByText("Save & Leave"));
+    expect(mockPush).toHaveBeenCalledWith("/practice");
+  });
+
+  it("opens and toggles controls in Display menu", () => {
+    render(
+      <ExamRunner
+        initialQuestions={mockQuestions}
+        rules={mockRules}
+        title="Diagnostic Quick Test"
+      />
+    );
+
+    const displayBtn = screen.getByRole("button", { name: /display accessibility settings/i });
+    fireEvent.click(displayBtn);
+
+    expect(screen.getByText("Font Size")).toBeInTheDocument();
+    expect(screen.getByText("High Contrast")).toBeInTheDocument();
+    expect(screen.getByText("Reduce Motion")).toBeInTheDocument();
+
+    // Select Large Font
+    const largeBtn = screen.getByRole("button", { name: "Large" });
+    fireEvent.click(largeBtn);
+    expect(largeBtn).toHaveClass("bg-white text-slate-900");
+
+    // Toggle High Contrast
+    const contrastSwitch = screen.getByRole("switch", { name: /toggle high contrast/i });
+    fireEvent.click(contrastSwitch);
+    expect(contrastSwitch).toHaveAttribute("aria-checked", "true");
+
+    // Toggle Reduce Motion
+    const motionSwitch = screen.getByRole("switch", { name: /toggle reduce motion/i });
+    fireEvent.click(motionSwitch);
+    expect(motionSwitch).toHaveAttribute("aria-checked", "true");
   });
 
   it("detects existing active draft, shows resume banner, and resumes session on click", async () => {
@@ -313,4 +398,3 @@ describe("ExamRunner Component", () => {
     expect(screen.queryByText(/Scratchpad & Arithmetic Canvas/i)).not.toBeInTheDocument();
   });
 });
-
